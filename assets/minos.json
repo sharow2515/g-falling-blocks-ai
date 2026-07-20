@@ -1,0 +1,566 @@
+[
+  {
+    "name": "BigL",
+    "file": "Mino_BigL.asset",
+    "isOriginal": true,
+    "gridSize": 3,
+    "color": "#8C4512",
+    "cells": [
+      [
+        0,
+        2
+      ],
+      [
+        0,
+        1
+      ],
+      [
+        0,
+        0
+      ],
+      [
+        1,
+        0
+      ],
+      [
+        2,
+        0
+      ]
+    ]
+  },
+  {
+    "name": "Big_O",
+    "file": "Mino_BigO.asset",
+    "isOriginal": true,
+    "gridSize": 3,
+    "color": "#D4F200",
+    "cells": [
+      [
+        0,
+        2
+      ],
+      [
+        1,
+        2
+      ],
+      [
+        2,
+        2
+      ],
+      [
+        0,
+        1
+      ],
+      [
+        2,
+        1
+      ],
+      [
+        0,
+        0
+      ],
+      [
+        1,
+        0
+      ],
+      [
+        2,
+        0
+      ]
+    ]
+  },
+  {
+    "name": "Mino_BigS",
+    "file": "Mino_BigS.asset",
+    "isOriginal": false,
+    "gridSize": 3,
+    "color": "#68FF41",
+    "cells": [
+      [
+        1,
+        2
+      ],
+      [
+        2,
+        2
+      ],
+      [
+        1,
+        1
+      ],
+      [
+        0,
+        0
+      ],
+      [
+        1,
+        0
+      ]
+    ]
+  },
+  {
+    "name": "Mino_BigZ",
+    "file": "Mino_BigZ.asset",
+    "isOriginal": true,
+    "gridSize": 3,
+    "color": "#FF0157",
+    "cells": [
+      [
+        0,
+        2
+      ],
+      [
+        1,
+        2
+      ],
+      [
+        1,
+        1
+      ],
+      [
+        1,
+        0
+      ],
+      [
+        2,
+        0
+      ]
+    ]
+  },
+  {
+    "name": "Cross",
+    "file": "Mino_Cross.asset",
+    "isOriginal": true,
+    "gridSize": 3,
+    "color": "#9C59B5",
+    "cells": [
+      [
+        1,
+        2
+      ],
+      [
+        0,
+        1
+      ],
+      [
+        1,
+        1
+      ],
+      [
+        2,
+        1
+      ],
+      [
+        1,
+        0
+      ]
+    ]
+  },
+  {
+    "name": "Mino_double",
+    "file": "Mino_Double.asset",
+    "isOriginal": true,
+    "gridSize": 5,
+    "color": "#07BCFD",
+    "cells": [
+      [
+        0,
+        2
+      ],
+      [
+        1,
+        2
+      ],
+      [
+        3,
+        2
+      ],
+      [
+        4,
+        2
+      ]
+    ]
+  },
+  {
+    "name": "Mino_H",
+    "file": "Mino_H.asset",
+    "isOriginal": true,
+    "gridSize": 3,
+    "color": "#326400",
+    "cells": [
+      [
+        0,
+        2
+      ],
+      [
+        2,
+        2
+      ],
+      [
+        0,
+        1
+      ],
+      [
+        1,
+        1
+      ],
+      [
+        2,
+        1
+      ],
+      [
+        0,
+        0
+      ],
+      [
+        2,
+        0
+      ]
+    ]
+  },
+  {
+    "name": "I",
+    "file": "Mino_I.asset",
+    "isOriginal": false,
+    "gridSize": 4,
+    "color": "#00F2F2",
+    "cells": [
+      [
+        0,
+        2
+      ],
+      [
+        1,
+        2
+      ],
+      [
+        2,
+        2
+      ],
+      [
+        3,
+        2
+      ]
+    ]
+  },
+  {
+    "name": "J",
+    "file": "Mino_J.asset",
+    "isOriginal": false,
+    "gridSize": 3,
+    "color": "#0000E6",
+    "cells": [
+      [
+        0,
+        2
+      ],
+      [
+        0,
+        1
+      ],
+      [
+        1,
+        1
+      ],
+      [
+        2,
+        1
+      ]
+    ]
+  },
+  {
+    "name": "L",
+    "file": "Mino_L.asset",
+    "isOriginal": false,
+    "gridSize": 3,
+    "color": "#F28C00",
+    "cells": [
+      [
+        2,
+        2
+      ],
+      [
+        0,
+        1
+      ],
+      [
+        1,
+        1
+      ],
+      [
+        2,
+        1
+      ]
+    ]
+  },
+  {
+    "name": "O",
+    "file": "Mino_O.asset",
+    "isOriginal": false,
+    "gridSize": 2,
+    "color": "#F2F200",
+    "cells": [
+      [
+        0,
+        1
+      ],
+      [
+        1,
+        1
+      ],
+      [
+        0,
+        0
+      ],
+      [
+        1,
+        0
+      ]
+    ]
+  },
+  {
+    "name": "Mino_Rectangle",
+    "file": "Mino_Rectangle.asset",
+    "isOriginal": true,
+    "gridSize": 3,
+    "color": "#FFDA49",
+    "cells": [
+      [
+        0,
+        2
+      ],
+      [
+        1,
+        2
+      ],
+      [
+        2,
+        2
+      ],
+      [
+        0,
+        1
+      ],
+      [
+        1,
+        1
+      ],
+      [
+        2,
+        1
+      ]
+    ]
+  },
+  {
+    "name": "S",
+    "file": "Mino_S.asset",
+    "isOriginal": false,
+    "gridSize": 3,
+    "color": "#00E600",
+    "cells": [
+      [
+        1,
+        2
+      ],
+      [
+        2,
+        2
+      ],
+      [
+        0,
+        1
+      ],
+      [
+        1,
+        1
+      ]
+    ]
+  },
+  {
+    "name": "Mino_Single",
+    "file": "Mino_Single.asset",
+    "isOriginal": false,
+    "gridSize": 3,
+    "color": "#C3730C",
+    "cells": [
+      [
+        1,
+        1
+      ]
+    ]
+  },
+  {
+    "name": "Mino_SmallU",
+    "file": "Mino_SmallU.asset",
+    "isOriginal": true,
+    "gridSize": 3,
+    "color": "#FF75F4",
+    "cells": [
+      [
+        0,
+        2
+      ],
+      [
+        2,
+        2
+      ],
+      [
+        0,
+        1
+      ],
+      [
+        1,
+        1
+      ],
+      [
+        2,
+        1
+      ]
+    ]
+  },
+  {
+    "name": "T",
+    "file": "Mino_T.asset",
+    "isOriginal": false,
+    "gridSize": 3,
+    "color": "#9900E6",
+    "cells": [
+      [
+        1,
+        2
+      ],
+      [
+        0,
+        1
+      ],
+      [
+        1,
+        1
+      ],
+      [
+        2,
+        1
+      ]
+    ]
+  },
+  {
+    "name": "U",
+    "file": "Mino_U.asset",
+    "isOriginal": true,
+    "gridSize": 3,
+    "color": "#E81F8C",
+    "cells": [
+      [
+        0,
+        2
+      ],
+      [
+        2,
+        2
+      ],
+      [
+        0,
+        1
+      ],
+      [
+        2,
+        1
+      ],
+      [
+        0,
+        0
+      ],
+      [
+        1,
+        0
+      ],
+      [
+        2,
+        0
+      ]
+    ]
+  },
+  {
+    "name": "Mino_W",
+    "file": "Mino_W.asset",
+    "isOriginal": true,
+    "gridSize": 5,
+    "color": "#05FF6D",
+    "cells": [
+      [
+        0,
+        2
+      ],
+      [
+        2,
+        2
+      ],
+      [
+        4,
+        2
+      ],
+      [
+        1,
+        1
+      ],
+      [
+        3,
+        1
+      ]
+    ]
+  },
+  {
+    "name": "Mino_X",
+    "file": "Mino_X.asset",
+    "isOriginal": true,
+    "gridSize": 3,
+    "color": "#F23519",
+    "cells": [
+      [
+        0,
+        2
+      ],
+      [
+        2,
+        2
+      ],
+      [
+        1,
+        1
+      ],
+      [
+        0,
+        0
+      ],
+      [
+        2,
+        0
+      ]
+    ]
+  },
+  {
+    "name": "Z",
+    "file": "Mino_Z.asset",
+    "isOriginal": false,
+    "gridSize": 3,
+    "color": "#E60000",
+    "cells": [
+      [
+        0,
+        2
+      ],
+      [
+        1,
+        2
+      ],
+      [
+        1,
+        1
+      ],
+      [
+        2,
+        1
+      ]
+    ]
+  }
+]

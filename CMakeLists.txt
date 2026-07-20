@@ -6,5 +6,13 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(SFML 3 COMPONENTS Graphics Window System REQUIRED)
 
-add_executable(FallingBlocks src/main.cpp)
-target_link_libraries(FallingBlocks PRIVATE SFML::Graphics SFML::Window SFML::System)
+add_subdirectory(src/core)
+
+add_executable(FallingBlocks
+    src/main.cpp
+    src/app/input_controller.cpp
+    src/app/renderer.cpp
+    src/app/application.cpp
+)
+target_link_libraries(FallingBlocks PRIVATE core SFML::Graphics SFML::Window SFML::System)
+target_include_directories(FallingBlocks PRIVATE src)
