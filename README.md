@@ -18,5 +18,7 @@ sudo apt-get install libx11-dev libxrandr-dev libxcursor-dev libxi-dev libudev-d
 ```bash
 cmake --preset=default
 cmake --build build
-./build/FallingBlocks
+./build/FallingBlocks # ブロック20種類使用
+./build/FallingBlocks --easy  # ブロック7種類使用
+./build/FallingBlocks --hard # ブロック20種類使用
 ```

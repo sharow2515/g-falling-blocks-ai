@@ -1,5 +1,7 @@
 #pragma once
 
+#include <string>
+
 #include "ai/heuristic_ai.hpp"
 #include "app/input_controller.hpp"
 #include "app/renderer.hpp"
@@ -9,7 +11,8 @@ namespace fb::app {
 
 class Application {
 public:
-    Application();
+    // minosJsonPath: 読み込むミノ定義ファイル(例: "assets/minos_hard.json")。
+    explicit Application(const std::string& minosJsonPath);
 
     int Run();
 
