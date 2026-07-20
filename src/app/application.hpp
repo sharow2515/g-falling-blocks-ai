@@ -1,5 +1,6 @@
 #pragma once
 
+#include "ai/heuristic_ai.hpp"
 #include "app/input_controller.hpp"
 #include "app/renderer.hpp"
 #include "core/game.hpp"
@@ -16,6 +17,8 @@ private:
     core::Game game_;
     InputController input_;
     Renderer renderer_;
+    ai::HeuristicAi ai_;
+    bool aiEnabled_ = false;
 };
 
 }  // namespace fb::app

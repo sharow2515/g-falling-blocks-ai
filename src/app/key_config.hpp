@@ -14,6 +14,7 @@ enum class KeyAction {
     Hold,
     Pause,
     Restart,
+    ToggleAi,
     Count,
 };
 
@@ -28,6 +29,7 @@ inline sf::Keyboard::Key DefaultKeyFor(KeyAction action) {
         case KeyAction::Hold: return sf::Keyboard::Key::C;
         case KeyAction::Pause: return sf::Keyboard::Key::Escape;
         case KeyAction::Restart: return sf::Keyboard::Key::R;
+        case KeyAction::ToggleAi: return sf::Keyboard::Key::A;
         default: return sf::Keyboard::Key::Unknown;
     }
 }

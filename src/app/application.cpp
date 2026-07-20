@@ -38,9 +38,16 @@ int Application::Run() {
 
         float dt = clock.restart().asSeconds();
 
-        input_.Update(game_, dt);
+        input_.Update(game_, dt, /*controlPiece=*/!aiEnabled_);
+        if (input_.ConsumeToggleAiRequested()) {
+            aiEnabled_ = !aiEnabled_;
+        }
         if (game_.IsGameOver() && input_.ConsumeRestartRequested()) {
             game_.RestartGame(RandomSeed());
+        }
+
+        if (aiEnabled_) {
+            ai_.Update(game_);
         }
 
         game_.Tick(dt);

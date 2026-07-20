@@ -74,27 +74,30 @@ void InputController::ResetDasArrIfNewPiece(const core::Game& game) {
     dasActiveRight_ = false;
 }
 
-void InputController::Update(core::Game& game, float dt) {
+void InputController::Update(core::Game& game, float dt, bool controlPiece) {
     for (std::size_t i = 0; i < kActionCount; ++i) {
         currPressed_[i] = sf::Keyboard::isKeyPressed(DefaultKeyFor(static_cast<KeyAction>(i)));
     }
 
-    ResetDasArrIfNewPiece(game);
-    HandleHorizontalMovement(game, dt);
+    if (controlPiece) {
+        ResetDasArrIfNewPiece(game);
+        HandleHorizontalMovement(game, dt);
 
-    if (WasPressedThisFrame(KeyAction::RotateCW)) game.RotateCW();
-    if (WasPressedThisFrame(KeyAction::RotateCCW)) game.RotateCCW();
+        if (WasPressedThisFrame(KeyAction::RotateCW)) game.RotateCW();
+        if (WasPressedThisFrame(KeyAction::RotateCCW)) game.RotateCCW();
 
-    if (WasPressedThisFrame(KeyAction::HardDrop)) {
-        game.HardDrop();
-    } else {
-        game.SetSoftDropping(IsPressed(KeyAction::SoftDrop));
-        if (WasPressedThisFrame(KeyAction::Hold)) game.Hold();
+        if (WasPressedThisFrame(KeyAction::HardDrop)) {
+            game.HardDrop();
+        } else {
+            game.SetSoftDropping(IsPressed(KeyAction::SoftDrop));
+            if (WasPressedThisFrame(KeyAction::Hold)) game.Hold();
+        }
     }
 
     if (!game.IsGameOver() && WasPressedThisFrame(KeyAction::Pause)) game.TogglePause();
 
     restartRequested_ = WasPressedThisFrame(KeyAction::Restart);
+    toggleAiRequested_ = WasPressedThisFrame(KeyAction::ToggleAi);
 
     prevPressed_ = currPressed_;
 }
@@ -102,6 +105,12 @@ void InputController::Update(core::Game& game, float dt) {
 bool InputController::ConsumeRestartRequested() {
     bool requested = restartRequested_;
     restartRequested_ = false;
+    return requested;
+}
+
+bool InputController::ConsumeToggleAiRequested() {
+    bool requested = toggleAiRequested_;
+    toggleAiRequested_ = false;
     return requested;
 }
 
