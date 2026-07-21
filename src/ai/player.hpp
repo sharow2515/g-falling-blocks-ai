@@ -15,6 +15,7 @@ enum class PlayerMove {
     Down,
     RotateCW,
     RotateCCW,
+    Hold,
     HardDrop,
 };
 

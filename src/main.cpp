@@ -1,7 +1,9 @@
 #include <cstdlib>
+#include <iostream>
 #include <memory>
 #include <string>
 
+#include "ai/beam/beam_search_player.hpp"
 #include "ai/heuristic/heuristic_player.hpp"
 #include "ai/player.hpp"
 #include "ai/reachability/reachability_player.hpp"
@@ -20,15 +22,32 @@ std::string ResolveMinosJsonPath(int argc, char** argv) {
     return "assets/minos_hard.json";
 }
 
-// --ai heuristic(デフォルト) / --ai reachability。
+int ResolveIntOption(int argc, char** argv, const std::string& flag, int defaultValue) {
+    for (int i = 1; i < argc; ++i) {
+        if (std::string(argv[i]) == flag && i + 1 < argc) {
+            return std::atoi(argv[++i]);
+        }
+    }
+    return defaultValue;
+}
+
+// --ai heuristic(デフォルト) / --ai reachability / --ai beam
+//   (beamは --beam-width N / --beam-depth N (0〜5) を追加指定可能)。
 std::unique_ptr<fb::ai::AiPlayer> ResolveAiPlayer(int argc, char** argv) {
+    std::string name = "heuristic";
     for (int i = 1; i < argc; ++i) {
         std::string arg = argv[i];
         if (arg == "--ai" && i + 1 < argc) {
-            std::string name = argv[++i];
-            if (name == "reachability") return std::make_unique<fb::ai::reachability::ReachabilityPlayer>();
-            return std::make_unique<fb::ai::HeuristicPlayer>();
+            name = argv[++i];
+            break;
         }
+    }
+
+    if (name == "reachability") return std::make_unique<fb::ai::reachability::ReachabilityPlayer>();
+    if (name == "beam") {
+        int beamWidth = ResolveIntOption(argc, argv, "--beam-width", 20);
+        int beamDepth = ResolveIntOption(argc, argv, "--beam-depth", 2);
+        return std::make_unique<fb::ai::beam::BeamSearchPlayer>(beamWidth, beamDepth);
     }
     return std::make_unique<fb::ai::HeuristicPlayer>();
 }
@@ -57,12 +76,19 @@ float ResolveAiDelay(int argc, char** argv) {
 int main(int argc, char** argv) {
     std::string minosJsonPath = ResolveMinosJsonPath(argc, argv);
 
+    std::unique_ptr<fb::ai::AiPlayer> aiPlayer;
+    try {
+        aiPlayer = ResolveAiPlayer(argc, argv);
+    } catch (const std::invalid_argument& e) {
+        std::cerr << "AI設定が不正です: " << e.what() << "\n";
+        return 1;
+    }
+
     if (HasVisualizeFlag(argc, argv)) {
-        fb::app::AiVisualizeApplication app(minosJsonPath, ResolveAiPlayer(argc, argv),
-                                             ResolveAiDelay(argc, argv));
+        fb::app::AiVisualizeApplication app(minosJsonPath, std::move(aiPlayer), ResolveAiDelay(argc, argv));
         return app.Run();
     }
 
-    fb::app::Application app(minosJsonPath, ResolveAiPlayer(argc, argv));
+    fb::app::Application app(minosJsonPath, std::move(aiPlayer));
     return app.Run();
 }
