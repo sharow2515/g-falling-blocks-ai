@@ -2,7 +2,7 @@
 
 #include <string>
 
-#include "ai/heuristic_ai.hpp"
+#include "ai/heuristic/heuristic_player.hpp"
 #include "app/input_controller.hpp"
 #include "app/renderer.hpp"
 #include "core/game.hpp"
@@ -20,7 +20,7 @@ private:
     core::Game game_;
     InputController input_;
     Renderer renderer_;
-    ai::HeuristicAi ai_;
+    ai::HeuristicPlayer ai_;
     bool aiEnabled_ = false;
 };
 

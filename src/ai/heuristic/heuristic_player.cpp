@@ -1,13 +1,13 @@
-#include "ai/heuristic_ai.hpp"
+#include "ai/heuristic/heuristic_player.hpp"
 
 #include <limits>
 
-#include "ai/evaluator.hpp"
-#include "ai/placement.hpp"
+#include "ai/heuristic/evaluator.hpp"
+#include "ai/heuristic/placement.hpp"
 
 namespace fb::ai {
 
-void HeuristicAi::Update(core::Game& game) {
+void HeuristicPlayer::Update(core::Game& game) {
     int spawnId = game.SpawnEventId();
     if (spawnId == lastSeenSpawnEventId_) return;
     lastSeenSpawnEventId_ = spawnId;
@@ -18,7 +18,7 @@ void HeuristicAi::Update(core::Game& game) {
     PlayBestMove(game);
 }
 
-void HeuristicAi::PlayBestMove(core::Game& game) {
+void HeuristicPlayer::PlayBestMove(core::Game& game) {
     const core::Mino* mino = game.GetActivePiece().MinoPtr();
     if (mino == nullptr) return;
 
@@ -38,6 +38,8 @@ void HeuristicAi::PlayBestMove(core::Game& game) {
 
     // 回転はウォールキックでxがずれる可能性があるため先に行い、
     // 移動量は回転後の実際の位置を見てから決める。
+    // 近い方向(時計回り/反時計回りの少ない方)を選ぶことで、途中の回転状態で
+    // キックが1つも成立せず立ち往生するリスクを減らす。
     int currentRotation = game.GetActivePiece().Rotation();
     int cwSteps = ((best->rotation - currentRotation) % 4 + 4) % 4;
     if (cwSteps <= 2) {

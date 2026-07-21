@@ -1,7 +1,7 @@
 add_library(ai STATIC
-    placement.cpp
-    evaluator.cpp
-    heuristic_ai.cpp
+    heuristic/placement.cpp
+    heuristic/evaluator.cpp
+    heuristic/heuristic_player.cpp
 )
 
 target_link_libraries(ai PUBLIC core)

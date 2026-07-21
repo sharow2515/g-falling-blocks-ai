@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ai/placement.hpp"
+#include "ai/heuristic/placement.hpp"
 #include "core/board.hpp"
 #include "core/types.hpp"
 
