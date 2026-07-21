@@ -33,6 +33,7 @@ public:
 
     bool MoveLeft(Board& board);
     bool MoveRight(Board& board);
+    bool MoveDown(Board& board);
 
     // direction: +1 = 時計回り, -1 = 反時計回り
     void Rotate(Board& board, int direction);

@@ -17,3 +17,10 @@ add_executable(FallingBlocks
 )
 target_link_libraries(FallingBlocks PRIVATE core ai SFML::Graphics SFML::Window SFML::System)
 target_include_directories(FallingBlocks PRIVATE src)
+
+add_executable(Benchmark
+    src/benchmark/benchmark_main.cpp
+    src/benchmark/runner.cpp
+)
+target_link_libraries(Benchmark PRIVATE core ai)
+target_include_directories(Benchmark PRIVATE src)

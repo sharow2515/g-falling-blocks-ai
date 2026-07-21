@@ -53,6 +53,11 @@ void Game::MoveRight() {
     if (CanAcceptInput()) activePiece_.MoveRight(board_);
 }
 
+bool Game::MoveDown() {
+    if (!CanAcceptInput()) return false;
+    return activePiece_.MoveDown(board_);
+}
+
 void Game::SetSoftDropping(bool active) {
     if (CanAcceptInput()) activePiece_.SetSoftDropping(active);
 }

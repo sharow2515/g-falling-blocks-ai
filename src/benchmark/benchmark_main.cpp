@@ -1,0 +1,85 @@
+#include <cmath>
+#include <cstdint>
+#include <cstdlib>
+#include <iostream>
+#include <string>
+#include <vector>
+
+#include "ai/heuristic/heuristic_player.hpp"
+#include "benchmark/runner.hpp"
+#include "core/mino_loader.hpp"
+
+namespace {
+
+struct Options {
+    int games = 100;
+    std::uint64_t seedStart = 1;
+    int maxLines = 500;
+    std::string minosJsonPath = "assets/minos_hard.json";
+};
+
+Options ParseOptions(int argc, char** argv) {
+    Options opts;
+    for (int i = 1; i < argc; ++i) {
+        std::string arg = argv[i];
+        if (arg == "--games" && i + 1 < argc) {
+            opts.games = std::atoi(argv[++i]);
+        } else if (arg == "--seed-start" && i + 1 < argc) {
+            opts.seedStart = static_cast<std::uint64_t>(std::atoll(argv[++i]));
+        } else if (arg == "--max-lines" && i + 1 < argc) {
+            opts.maxLines = std::atoi(argv[++i]);
+        } else if (arg == "--easy") {
+            opts.minosJsonPath = "assets/minos_easy.json";
+        } else if (arg == "--hard") {
+            opts.minosJsonPath = "assets/minos_hard.json";
+        }
+    }
+    return opts;
+}
+
+}  // namespace
+
+int main(int argc, char** argv) {
+    Options opts = ParseOptions(argc, argv);
+
+    std::vector<fb::core::Mino> minos;
+    try {
+        minos = fb::core::LoadMinos(opts.minosJsonPath);
+    } catch (const std::exception& e) {
+        std::cerr << "ミノ定義の読み込みに失敗しました: " << e.what() << "\n";
+        return 1;
+    }
+
+    fb::ai::HeuristicPlayer player;
+
+    double scoreSum = 0.0;
+    double linesSum = 0.0;
+    int bestScore = 0;
+    int worstScore = -1;
+    int lineLimitHits = 0;
+
+    for (int i = 0; i < opts.games; ++i) {
+        std::uint64_t seed = opts.seedStart + static_cast<std::uint64_t>(i);
+        fb::benchmark::GameResult result = fb::benchmark::RunOneGame(player, minos, seed, opts.maxLines);
+
+        scoreSum += result.score;
+        linesSum += result.totalLines;
+        if (result.score > bestScore) bestScore = result.score;
+        if (worstScore < 0 || result.score < worstScore) worstScore = result.score;
+        if (result.hitLineLimit) ++lineLimitHits;
+    }
+
+    double avgScore = opts.games > 0 ? scoreSum / opts.games : 0.0;
+    double avgLines = opts.games > 0 ? linesSum / opts.games : 0.0;
+
+    std::cout << "games: " << opts.games << "\n";
+    std::cout << "average score: " << avgScore << "\n";
+    std::cout << "average lines: " << avgLines << "\n";
+    std::cout << "best score: " << bestScore << "\n";
+    std::cout << "worst score: " << worstScore << "\n";
+    if (lineLimitHits > 0) {
+        std::cout << lineLimitHits << " game(s) hit the --max-lines limit (" << opts.maxLines << ")\n";
+    }
+
+    return 0;
+}

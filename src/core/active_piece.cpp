@@ -68,6 +68,7 @@ bool ActivePiece::MoveInternal(Board& board, Vec2i direction) {
 
 bool ActivePiece::MoveLeft(Board& board) { return MoveInternal(board, Vec2i::Left()); }
 bool ActivePiece::MoveRight(Board& board) { return MoveInternal(board, Vec2i::Right()); }
+bool ActivePiece::MoveDown(Board& board) { return MoveInternal(board, Vec2i::Down()); }
 
 void ActivePiece::Rotate(Board& board, int direction) {
     int newRotation = ((rotation_ + direction) % 4 + 4) % 4;

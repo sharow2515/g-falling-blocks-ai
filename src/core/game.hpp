@@ -32,6 +32,8 @@ public:
     // コマンド
     void MoveLeft();
     void MoveRight();
+    bool MoveDown();
+
     void SetSoftDropping(bool active);
     void HardDrop();
     void RotateCW();
