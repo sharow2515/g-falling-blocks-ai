@@ -1,5 +1,8 @@
 # g-falling-blocks-ai
 
+「激キショテトリス」（作者: 物理鉄人）をC++に移植し、AIを実装するリポジトリです。
+- 元作品: https://unityroom.com/games/kishotet
+
 ## 必要なツール
 
 - CMake
@@ -18,9 +21,9 @@ sudo apt-get install libx11-dev libxrandr-dev libxcursor-dev libxi-dev libudev-d
 ```bash
 cmake --preset=default
 cmake --build build
-./build/FallingBlocks # ブロック20種類使用
-./build/FallingBlocks --easy  # ブロック7種類使用
-./build/FallingBlocks --hard # ブロック20種類使用
+./build/FallingBlocks          # ブロック20種類使用
+./build/FallingBlocks --easy   # ブロック7種類使用
+./build/FallingBlocks --hard   # ブロック20種類使用
 ```
 
 ## AIベンチマーク
