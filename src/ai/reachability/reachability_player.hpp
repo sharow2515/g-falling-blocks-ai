@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <vector>
 
 #include "ai/player.hpp"
 #include "core/game.hpp"
@@ -12,10 +13,11 @@ namespace fb::ai::reachability {
 class ReachabilityPlayer : public AiPlayer {
 public:
     void Update(core::Game& game) override;
+    std::vector<PlayerMove> Plan(core::Game& game) override;
     std::string Name() const override { return "Reachability"; }
 
 private:
-    void PlayBestMove(core::Game& game);
+    std::vector<PlayerMove> BuildPlan(core::Game& game);
 
     int lastSeenSpawnEventId_ = -1;
 };

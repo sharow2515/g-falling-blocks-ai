@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <vector>
 
 #include "ai/player.hpp"
 #include "core/game.hpp"
@@ -16,10 +17,11 @@ public:
     // 呼び出しごとに1回チェックし、新しいピースが出現していれば
     // (Game::SpawnEventId()の変化で検知)最善手を1回だけ決定・実行する。
     void Update(core::Game& game) override;
+    std::vector<PlayerMove> Plan(core::Game& game) override;
     std::string Name() const override { return "Heuristic"; }
 
 private:
-    void PlayBestMove(core::Game& game);
+    std::vector<PlayerMove> BuildPlan(core::Game& game);
 
     int lastSeenSpawnEventId_ = -1;
 };
