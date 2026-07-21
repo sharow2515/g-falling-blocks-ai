@@ -29,6 +29,17 @@ cmake --build build
 
 ゲーム中にAキーを押すと、指定したAIによる自動プレイのON/OFFを切り替えられる。
 
+## AI可視化モード
+
+Aiの動きを可視化するモード
+
+```bash
+./build/FallingBlocks --visualize                     # AI: heuristic(デフォルト)で可視化
+./build/FallingBlocks --visualize --ai reachability   # AIを切り替える
+./build/FallingBlocks --visualize --ai-delay 0.1      # 1操作ごとの間隔(秒)を変更(デフォルト0.3)
+```
+
+
 ## AIベンチマーク
 
 `ai::AiPlayer`実装(`heuristic` / `reachability`)の性能を、ウィンドウなしで複数ゲーム連続実行して計測する。
