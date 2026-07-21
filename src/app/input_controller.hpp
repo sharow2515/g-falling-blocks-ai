@@ -10,9 +10,13 @@ namespace fb::app {
 class InputController {
 public:
     // 毎フレーム呼び出し、DAS/ARRを進めてcore::Gameへコマンドを発行する。
-    void Update(core::Game& game, float dt);
+    // controlPiece=false の間は移動・回転・ソフト/ハードドロップ・ホールドを発行しない
+    // (AI操作時に人間の入力とAIの入力が競合しないようにするため)。
+    // Pause/Restart/ToggleAiキーはcontrolPieceの値に関わらず常に処理する。
+    void Update(core::Game& game, float dt, bool controlPiece = true);
 
     [[nodiscard]] bool ConsumeRestartRequested();
+    [[nodiscard]] bool ConsumeToggleAiRequested();
 
 private:
     [[nodiscard]] bool WasPressedThisFrame(KeyAction action) const;
@@ -37,6 +41,7 @@ private:
     int lastSeenSpawnEventId_ = -1;
 
     bool restartRequested_ = false;
+    bool toggleAiRequested_ = false;
 };
 
 }  // namespace fb::app

@@ -18,5 +18,17 @@ sudo apt-get install libx11-dev libxrandr-dev libxcursor-dev libxi-dev libudev-d
 ```bash
 cmake --preset=default
 cmake --build build
-./build/FallingBlocks
+./build/FallingBlocks # ブロック20種類使用
+./build/FallingBlocks --easy  # ブロック7種類使用
+./build/FallingBlocks --hard # ブロック20種類使用
+```
+
+## AIベンチマーク
+
+```bash
+./build/Benchmark                              # デフォルト設定(後述)で実行
+./build/Benchmark --games 100 --seed-start 1   # 100ゲーム、シード1から連番で実行
+./build/Benchmark --easy                       # ブロック7種類で実行
+./build/Benchmark --hard                       # ブロック20種類で実行(デフォルト)
+./build/Benchmark --max-lines 1000             # 1ゲームあたりの消去ライン上限を変更
 ```

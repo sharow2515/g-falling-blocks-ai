@@ -8,8 +8,8 @@ namespace fb::app {
 
 namespace {
 
-core::Game MakeGame() {
-    auto minos = core::LoadMinos("assets/minos.json");
+core::Game MakeGame(const std::string& minosJsonPath) {
+    auto minos = core::LoadMinos(minosJsonPath);
     return core::Game(std::move(minos));
 }
 
@@ -20,7 +20,7 @@ std::uint64_t RandomSeed() {
 
 }  // namespace
 
-Application::Application() : game_(MakeGame()) {
+Application::Application(const std::string& minosJsonPath) : game_(MakeGame(minosJsonPath)) {
     game_.StartGame(RandomSeed());
 }
 
@@ -38,9 +38,16 @@ int Application::Run() {
 
         float dt = clock.restart().asSeconds();
 
-        input_.Update(game_, dt);
+        input_.Update(game_, dt, /*controlPiece=*/!aiEnabled_);
+        if (input_.ConsumeToggleAiRequested()) {
+            aiEnabled_ = !aiEnabled_;
+        }
         if (game_.IsGameOver() && input_.ConsumeRestartRequested()) {
             game_.RestartGame(RandomSeed());
+        }
+
+        if (aiEnabled_) {
+            ai_.Update(game_);
         }
 
         game_.Tick(dt);

@@ -1,0 +1,177 @@
+[
+  {
+    "name": "I",
+    "file": "Mino_I.asset",
+    "isOriginal": false,
+    "gridSize": 4,
+    "color": "#00F2F2",
+    "cells": [
+      [
+        0,
+        2
+      ],
+      [
+        1,
+        2
+      ],
+      [
+        2,
+        2
+      ],
+      [
+        3,
+        2
+      ]
+    ]
+  },
+  {
+    "name": "J",
+    "file": "Mino_J.asset",
+    "isOriginal": false,
+    "gridSize": 3,
+    "color": "#0000E6",
+    "cells": [
+      [
+        0,
+        2
+      ],
+      [
+        0,
+        1
+      ],
+      [
+        1,
+        1
+      ],
+      [
+        2,
+        1
+      ]
+    ]
+  },
+  {
+    "name": "L",
+    "file": "Mino_L.asset",
+    "isOriginal": false,
+    "gridSize": 3,
+    "color": "#F28C00",
+    "cells": [
+      [
+        2,
+        2
+      ],
+      [
+        0,
+        1
+      ],
+      [
+        1,
+        1
+      ],
+      [
+        2,
+        1
+      ]
+    ]
+  },
+  {
+    "name": "O",
+    "file": "Mino_O.asset",
+    "isOriginal": false,
+    "gridSize": 2,
+    "color": "#F2F200",
+    "cells": [
+      [
+        0,
+        1
+      ],
+      [
+        1,
+        1
+      ],
+      [
+        0,
+        0
+      ],
+      [
+        1,
+        0
+      ]
+    ]
+  },
+  {
+    "name": "S",
+    "file": "Mino_S.asset",
+    "isOriginal": false,
+    "gridSize": 3,
+    "color": "#00E600",
+    "cells": [
+      [
+        1,
+        2
+      ],
+      [
+        2,
+        2
+      ],
+      [
+        0,
+        1
+      ],
+      [
+        1,
+        1
+      ]
+    ]
+  },
+  {
+    "name": "T",
+    "file": "Mino_T.asset",
+    "isOriginal": false,
+    "gridSize": 3,
+    "color": "#9900E6",
+    "cells": [
+      [
+        1,
+        2
+      ],
+      [
+        0,
+        1
+      ],
+      [
+        1,
+        1
+      ],
+      [
+        2,
+        1
+      ]
+    ]
+  },
+  {
+    "name": "Z",
+    "file": "Mino_Z.asset",
+    "isOriginal": false,
+    "gridSize": 3,
+    "color": "#E60000",
+    "cells": [
+      [
+        0,
+        2
+      ],
+      [
+        1,
+        2
+      ],
+      [
+        1,
+        1
+      ],
+      [
+        2,
+        1
+      ]
+    ]
+  }
+]
