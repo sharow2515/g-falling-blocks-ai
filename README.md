@@ -1,5 +1,8 @@
 # g-falling-blocks-ai
 
+「激キショテトリス」（作者: 物理鉄人）をC++に移植し、AIを実装するリポジトリです。
+- 元作品: https://unityroom.com/games/kishotet
+
 ## 必要なツール
 
 - CMake
