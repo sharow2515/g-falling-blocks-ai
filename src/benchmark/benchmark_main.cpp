@@ -6,6 +6,7 @@
 #include <string>
 #include <vector>
 
+#include "ai/beam/beam_search_player.hpp"
 #include "ai/heuristic/heuristic_player.hpp"
 #include "ai/player.hpp"
 #include "ai/reachability/reachability_player.hpp"
@@ -19,7 +20,9 @@ struct Options {
     std::uint64_t seedStart = 1;
     int maxLines = 500;
     std::string minosJsonPath = "assets/minos_hard.json";
-    std::string aiName = "heuristic";  // "heuristic" | "reachability"
+    std::string aiName = "heuristic";  // "heuristic" | "reachability" | "beam"
+    int beamWidth = 20;
+    int beamDepth = 2;
 };
 
 Options ParseOptions(int argc, char** argv) {
@@ -34,6 +37,10 @@ Options ParseOptions(int argc, char** argv) {
             opts.maxLines = std::atoi(argv[++i]);
         } else if (arg == "--ai" && i + 1 < argc) {
             opts.aiName = argv[++i];
+        } else if (arg == "--beam-width" && i + 1 < argc) {
+            opts.beamWidth = std::atoi(argv[++i]);
+        } else if (arg == "--beam-depth" && i + 1 < argc) {
+            opts.beamDepth = std::atoi(argv[++i]);
         } else if (arg == "--easy") {
             opts.minosJsonPath = "assets/minos_easy.json";
         } else if (arg == "--hard") {
@@ -43,8 +50,11 @@ Options ParseOptions(int argc, char** argv) {
     return opts;
 }
 
-std::unique_ptr<fb::ai::AiPlayer> MakePlayer(const std::string& name) {
-    if (name == "reachability") return std::make_unique<fb::ai::reachability::ReachabilityPlayer>();
+std::unique_ptr<fb::ai::AiPlayer> MakePlayer(const Options& opts) {
+    if (opts.aiName == "reachability") return std::make_unique<fb::ai::reachability::ReachabilityPlayer>();
+    if (opts.aiName == "beam") {
+        return std::make_unique<fb::ai::beam::BeamSearchPlayer>(opts.beamWidth, opts.beamDepth);
+    }
     return std::make_unique<fb::ai::HeuristicPlayer>();
 }
 
@@ -61,7 +71,13 @@ int main(int argc, char** argv) {
         return 1;
     }
 
-    std::unique_ptr<fb::ai::AiPlayer> player = MakePlayer(opts.aiName);
+    std::unique_ptr<fb::ai::AiPlayer> player;
+    try {
+        player = MakePlayer(opts);
+    } catch (const std::invalid_argument& e) {
+        std::cerr << "AI設定が不正です: " << e.what() << "\n";
+        return 1;
+    }
 
     double scoreSum = 0.0;
     double linesSum = 0.0;

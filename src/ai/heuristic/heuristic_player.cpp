@@ -39,6 +39,7 @@ void ExecuteMove(core::Game& game, PlayerMove move) {
         case PlayerMove::Down: game.MoveDown(); break;
         case PlayerMove::RotateCW: game.RotateCW(); break;
         case PlayerMove::RotateCCW: game.RotateCCW(); break;
+        case PlayerMove::Hold: game.Hold(); break;
         case PlayerMove::HardDrop: game.HardDrop(); break;
     }
 }

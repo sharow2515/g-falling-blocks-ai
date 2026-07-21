@@ -33,6 +33,7 @@ void AiVisualizeApplication::ExecuteMove(ai::PlayerMove move) {
         case ai::PlayerMove::Down: game_.MoveDown(); break;
         case ai::PlayerMove::RotateCW: game_.RotateCW(); break;
         case ai::PlayerMove::RotateCCW: game_.RotateCCW(); break;
+        case ai::PlayerMove::Hold: game_.Hold(); break;
         case ai::PlayerMove::HardDrop: game_.HardDrop(); break;
     }
 }

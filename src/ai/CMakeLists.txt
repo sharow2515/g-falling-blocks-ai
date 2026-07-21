@@ -5,6 +5,9 @@ add_library(ai STATIC
     reachability/reachable_placement.cpp
     reachability/evaluator.cpp
     reachability/reachability_player.cpp
+    beam/reachable_placement.cpp
+    beam/evaluator.cpp
+    beam/beam_search_player.cpp
 )
 
 target_link_libraries(ai PUBLIC core)
