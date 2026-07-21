@@ -2,10 +2,13 @@
 #include <cstdint>
 #include <cstdlib>
 #include <iostream>
+#include <memory>
 #include <string>
 #include <vector>
 
 #include "ai/heuristic/heuristic_player.hpp"
+#include "ai/player.hpp"
+#include "ai/reachability/reachability_player.hpp"
 #include "benchmark/runner.hpp"
 #include "core/mino_loader.hpp"
 
@@ -16,6 +19,7 @@ struct Options {
     std::uint64_t seedStart = 1;
     int maxLines = 500;
     std::string minosJsonPath = "assets/minos_hard.json";
+    std::string aiName = "heuristic";  // "heuristic" | "reachability"
 };
 
 Options ParseOptions(int argc, char** argv) {
@@ -28,6 +32,8 @@ Options ParseOptions(int argc, char** argv) {
             opts.seedStart = static_cast<std::uint64_t>(std::atoll(argv[++i]));
         } else if (arg == "--max-lines" && i + 1 < argc) {
             opts.maxLines = std::atoi(argv[++i]);
+        } else if (arg == "--ai" && i + 1 < argc) {
+            opts.aiName = argv[++i];
         } else if (arg == "--easy") {
             opts.minosJsonPath = "assets/minos_easy.json";
         } else if (arg == "--hard") {
@@ -35,6 +41,11 @@ Options ParseOptions(int argc, char** argv) {
         }
     }
     return opts;
+}
+
+std::unique_ptr<fb::ai::AiPlayer> MakePlayer(const std::string& name) {
+    if (name == "reachability") return std::make_unique<fb::ai::reachability::ReachabilityPlayer>();
+    return std::make_unique<fb::ai::HeuristicPlayer>();
 }
 
 }  // namespace
@@ -50,7 +61,7 @@ int main(int argc, char** argv) {
         return 1;
     }
 
-    fb::ai::HeuristicPlayer player;
+    std::unique_ptr<fb::ai::AiPlayer> player = MakePlayer(opts.aiName);
 
     double scoreSum = 0.0;
     double linesSum = 0.0;
@@ -60,7 +71,7 @@ int main(int argc, char** argv) {
 
     for (int i = 0; i < opts.games; ++i) {
         std::uint64_t seed = opts.seedStart + static_cast<std::uint64_t>(i);
-        fb::benchmark::GameResult result = fb::benchmark::RunOneGame(player, minos, seed, opts.maxLines);
+        fb::benchmark::GameResult result = fb::benchmark::RunOneGame(*player, minos, seed, opts.maxLines);
 
         scoreSum += result.score;
         linesSum += result.totalLines;
@@ -72,6 +83,7 @@ int main(int argc, char** argv) {
     double avgScore = opts.games > 0 ? scoreSum / opts.games : 0.0;
     double avgLines = opts.games > 0 ? linesSum / opts.games : 0.0;
 
+    std::cout << "ai: " << player->Name() << "\n";
     std::cout << "games: " << opts.games << "\n";
     std::cout << "average score: " << avgScore << "\n";
     std::cout << "average lines: " << avgLines << "\n";

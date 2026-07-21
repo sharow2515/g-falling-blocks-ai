@@ -1,0 +1,23 @@
+#pragma once
+
+#include <string>
+
+#include "ai/player.hpp"
+#include "core/game.hpp"
+
+namespace fb::ai::reachability {
+
+// 実際の移動・回転(ウォールキック含む)で到達可能な全ての置き場所をBFSで探索し、
+// 評価関数で採点して最善のものを選ぶAI。
+class ReachabilityPlayer : public AiPlayer {
+public:
+    void Update(core::Game& game) override;
+    std::string Name() const override { return "Reachability"; }
+
+private:
+    void PlayBestMove(core::Game& game);
+
+    int lastSeenSpawnEventId_ = -1;
+};
+
+}  // namespace fb::ai::reachability

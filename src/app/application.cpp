@@ -20,7 +20,8 @@ std::uint64_t RandomSeed() {
 
 }  // namespace
 
-Application::Application(const std::string& minosJsonPath) : game_(MakeGame(minosJsonPath)) {
+Application::Application(const std::string& minosJsonPath, std::unique_ptr<ai::AiPlayer> aiPlayer)
+    : game_(MakeGame(minosJsonPath)), ai_(std::move(aiPlayer)) {
     game_.StartGame(RandomSeed());
 }
 
@@ -47,7 +48,7 @@ int Application::Run() {
         }
 
         if (aiEnabled_) {
-            ai_.Update(game_);
+            ai_->Update(game_);
         }
 
         game_.Tick(dt);
