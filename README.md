@@ -25,6 +25,7 @@ cmake --build build
 ./build/FallingBlocks --easy             # ブロック7種類使用
 ./build/FallingBlocks --hard             # ブロック20種類使用
 ./build/FallingBlocks --ai reachability  # 自動プレイに使うAIを切り替える
+./build/FallingBlocks --seed 123         # ミノの出現列を指定する(未指定ならランダム)
 ```
 
 ゲーム中にAキーを押すと、指定したAIによる自動プレイのON/OFFを切り替えられる。
@@ -37,6 +38,7 @@ Aiの動きを可視化するモード
 ./build/FallingBlocks --visualize                     # AI: heuristic(デフォルト)で可視化
 ./build/FallingBlocks --visualize --ai reachability   # AIを切り替える
 ./build/FallingBlocks --visualize --ai-delay 0.1      # 1操作ごとの間隔(秒)を変更(デフォルト0.3)
+./build/FallingBlocks --visualize --seed 123          # ミノの出現列を指定する(未指定ならランダム)
 ```
 
 

@@ -20,9 +20,14 @@ std::uint64_t RandomSeed() {
 
 }  // namespace
 
-Application::Application(const std::string& minosJsonPath, std::unique_ptr<ai::AiPlayer> aiPlayer)
-    : game_(MakeGame(minosJsonPath)), ai_(std::move(aiPlayer)) {
-    game_.StartGame(RandomSeed());
+Application::Application(const std::string& minosJsonPath, std::unique_ptr<ai::AiPlayer> aiPlayer,
+                          std::optional<std::uint64_t> seed)
+    : game_(MakeGame(minosJsonPath)), ai_(std::move(aiPlayer)), fixedSeed_(seed) {
+    game_.StartGame(NextSeed());
+}
+
+std::uint64_t Application::NextSeed() const {
+    return fixedSeed_.has_value() ? *fixedSeed_ : RandomSeed();
 }
 
 int Application::Run() {
@@ -44,7 +49,7 @@ int Application::Run() {
             aiEnabled_ = !aiEnabled_;
         }
         if (game_.IsGameOver() && input_.ConsumeRestartRequested()) {
-            game_.RestartGame(RandomSeed());
+            game_.RestartGame(NextSeed());
         }
 
         if (aiEnabled_) {

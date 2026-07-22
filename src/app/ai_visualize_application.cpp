@@ -21,9 +21,14 @@ std::uint64_t RandomSeed() {
 }  // namespace
 
 AiVisualizeApplication::AiVisualizeApplication(const std::string& minosJsonPath,
-                                              std::unique_ptr<ai::AiPlayer> aiPlayer, float moveDelay)
-    : game_(MakeGame(minosJsonPath)), ai_(std::move(aiPlayer)), moveDelay_(moveDelay) {
-    game_.StartGame(RandomSeed());
+                                              std::unique_ptr<ai::AiPlayer> aiPlayer, float moveDelay,
+                                              std::optional<std::uint64_t> seed)
+    : game_(MakeGame(minosJsonPath)), ai_(std::move(aiPlayer)), moveDelay_(moveDelay), fixedSeed_(seed) {
+    game_.StartGame(NextSeed());
+}
+
+std::uint64_t AiVisualizeApplication::NextSeed() const {
+    return fixedSeed_.has_value() ? *fixedSeed_ : RandomSeed();
 }
 
 void AiVisualizeApplication::ExecuteMove(ai::PlayerMove move) {
@@ -58,7 +63,7 @@ int AiVisualizeApplication::Run() {
 
         if (game_.IsGameOver()) {
             if (restartJustPressed) {
-                game_.RestartGame(RandomSeed());
+                game_.RestartGame(NextSeed());
                 pendingMoves_.clear();
                 cooldownTimer_ = 0.f;
             }
