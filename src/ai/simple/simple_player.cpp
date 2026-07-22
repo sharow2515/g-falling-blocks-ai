@@ -1,7 +1,5 @@
 #include "ai/simple/simple_player.hpp"
 
-#include <limits>
-
 #include "ai/common/move_execution.hpp"
 #include "ai/simple/evaluator.hpp"
 #include "ai/simple/placement.hpp"
@@ -57,16 +55,17 @@ std::vector<PlayerMove> SimplePlayer::BuildPlan(core::Game& game) {
     std::vector<Placement> placements = EnumeratePlacements(game.GetBoard(), *mino);
     if (placements.empty()) return {};
 
-    double bestScore = -std::numeric_limits<double>::infinity();
-    const Placement* best = nullptr;
-    for (const auto& p : placements) {
-        double score = ScorePlacement(game.GetBoard(), p, mino->color);
+    // 最初の候補を無条件でbestにしておく(全候補がゲームオーバー行きで
+    // 同点の-infinityになる場合でも、どれか1つは選んで手詰まりを避ける)。
+    const Placement* best = &placements.front();
+    double bestScore = ScorePlacement(game.GetBoard(), *best, mino->color);
+    for (std::size_t i = 1; i < placements.size(); ++i) {
+        double score = ScorePlacement(game.GetBoard(), placements[i], mino->color);
         if (score > bestScore) {
             bestScore = score;
-            best = &p;
+            best = &placements[i];
         }
     }
-    if (best == nullptr) return {};
 
     std::vector<PlayerMove> plan;
 
