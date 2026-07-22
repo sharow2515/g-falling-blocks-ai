@@ -1,7 +1,5 @@
 #include "ai/reachability/reachability_player.hpp"
 
-#include <limits>
-
 #include "ai/common/move_execution.hpp"
 #include "ai/common/path_conversion.hpp"
 #include "ai/common/reachable_search.hpp"
@@ -38,16 +36,17 @@ std::vector<PlayerMove> ReachabilityPlayer::BuildPlan(core::Game& game) {
         common::SearchReachablePlacements(game.GetBoard(), *mino, spawnRotation, spawnPosition);
     if (placements.empty()) return {};
 
-    double bestScore = -std::numeric_limits<double>::infinity();
-    const common::ReachablePlacement* best = nullptr;
-    for (const auto& p : placements) {
-        double score = ScorePlacement(game.GetBoard(), p.cells, mino->color);
+    // 最初の候補を無条件でbestにしておく(全候補がゲームオーバー行きで
+    // 同点の-infinityになる場合でも、どれか1つは選んで手詰まりを避ける)。
+    const common::ReachablePlacement* best = &placements.front();
+    double bestScore = ScorePlacement(game.GetBoard(), best->cells, mino->color);
+    for (std::size_t i = 1; i < placements.size(); ++i) {
+        double score = ScorePlacement(game.GetBoard(), placements[i].cells, mino->color);
         if (score > bestScore) {
             bestScore = score;
-            best = &p;
+            best = &placements[i];
         }
     }
-    if (best == nullptr) return {};
 
     return common::ConvertPath(best->path);
 }

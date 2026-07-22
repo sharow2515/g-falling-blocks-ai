@@ -1,10 +1,14 @@
 #include "ai/reachability/evaluator.hpp"
 
+#include <limits>
+
 #include "ai/common/board_features.hpp"
 
 namespace fb::ai::reachability {
 
 double Evaluate(const Features& f) {
+    if (f.causesGameOver) return -std::numeric_limits<double>::infinity();
+
     return -1.0 * f.landingHeight + 1.0 * f.erodedPieceCells - 1.0 * f.rowTransitions -
            1.0 * f.columnTransitions - 4.0 * f.holes - 1.0 * f.cumulativeWells;
 }
@@ -23,6 +27,7 @@ Features ComputeFeatures(core::Board board, const std::vector<core::Vec2i>& cell
     f.rowTransitions = common::CountRowTransitions(board);
     f.columnTransitions = common::CountColumnTransitions(board);
     f.cumulativeWells = common::CountCumulativeWells(board);
+    f.causesGameOver = board.IsGameOver();
 
     return f;
 }
