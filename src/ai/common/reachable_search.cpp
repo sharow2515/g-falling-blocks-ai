@@ -1,9 +1,7 @@
 #include "ai/common/reachable_search.hpp"
 
-#include <array>
-#include <map>
+#include <algorithm>
 #include <queue>
-#include <utility>
 
 #include "core/wall_kick.hpp"
 
@@ -11,16 +9,29 @@ namespace fb::ai::common {
 
 namespace {
 
-struct StateKey {
+struct State {
     int rotation;
     int x;
     int y;
+};
 
-    bool operator<(const StateKey& other) const {
-        if (rotation != other.rotation) return rotation < other.rotation;
-        if (x != other.x) return x < other.x;
-        return y < other.y;
-    }
+class StateSpace {
+public:
+    StateSpace(const core::Board& board, int gridSize)
+        : width_(board.Width() + 2 * gridSize),
+          height_(board.TotalHeight() + 2 * gridSize),
+          offsetX_(gridSize),
+          offsetY_(gridSize) {}
+
+    int Index(const State& s) const { return (s.rotation * width_ + (s.x + offsetX_)) * height_ + (s.y + offsetY_); }
+
+    int Size() const { return 4 * width_ * height_; }
+
+private:
+    int width_;
+    int height_;
+    int offsetX_;
+    int offsetY_;
 };
 
 }  // namespace
@@ -29,35 +40,50 @@ std::vector<ReachablePlacement> SearchReachablePlacements(const core::Board& boa
                                                             int spawnRotation, core::Vec2i spawnPosition) {
     std::vector<ReachablePlacement> results;
 
-    // 回転ごとのセル形状はミノ・回転の組み合わせで固定なので先に計算しておく。
-    std::array<std::vector<core::Vec2i>, 4> cellsByRotation;
-    for (int r = 0; r < 4; ++r) cellsByRotation[r] = mino.GetCells(r);
-
+    // 回転ごとのセル形状はMino::GetCells内でキャッシュされているため、
+    // ここで改めて配列にコピーする必要はない。
     core::KickTableType kickType = core::SelectKickTable(mino.name, mino.gridSize);
 
-    StateKey startKey{spawnRotation, spawnPosition.x, spawnPosition.y};
-    std::map<StateKey, std::vector<MoveType>> visited;
-    visited[startKey] = {};
+    StateSpace space(board, mino.gridSize);
+    std::vector<bool> visited(static_cast<std::size_t>(space.Size()), false);
+    std::vector<int> parent(static_cast<std::size_t>(space.Size()), -1);
+    std::vector<MoveType> moveFromParent(static_cast<std::size_t>(space.Size()));
 
-    std::queue<StateKey> pending;
-    pending.push(startKey);
+    // 終端状態から親を辿って、そこまでの手順を復元する。
+    auto reconstructPath = [&](int index) {
+        std::vector<MoveType> path;
+        while (parent[index] != -1) {
+            path.push_back(moveFromParent[index]);
+            index = parent[index];
+        }
+        std::reverse(path.begin(), path.end());
+        return path;
+    };
+
+    State start{spawnRotation, spawnPosition.x, spawnPosition.y};
+    int startIndex = space.Index(start);
+    visited[startIndex] = true;
+
+    std::queue<State> pending;
+    pending.push(start);
 
     while (!pending.empty()) {
-        StateKey current = pending.front();
+        State current = pending.front();
         pending.pop();
 
         core::Vec2i pos{current.x, current.y};
-        const std::vector<core::Vec2i>& cells = cellsByRotation[current.rotation];
-        const std::vector<MoveType>& currentPath = visited.at(current);
+        const std::vector<core::Vec2i>& cells = mino.GetCells(current.rotation);
+        int currentIndex = space.Index(current);
 
         auto tryVisit = [&](core::Vec2i newPos, int newRotation, MoveType moveType) {
-            StateKey newKey{newRotation, newPos.x, newPos.y};
-            if (visited.find(newKey) != visited.end()) return;
+            State next{newRotation, newPos.x, newPos.y};
+            int nextIndex = space.Index(next);
+            if (visited[nextIndex]) return;
 
-            std::vector<MoveType> newPath = currentPath;
-            newPath.push_back(moveType);
-            visited.emplace(newKey, std::move(newPath));
-            pending.push(newKey);
+            visited[nextIndex] = true;
+            parent[nextIndex] = currentIndex;
+            moveFromParent[nextIndex] = moveType;
+            pending.push(next);
         };
 
         // 左右下への移動
@@ -76,7 +102,7 @@ std::vector<ReachablePlacement> SearchReachablePlacements(const core::Board& boa
         for (int dir : {1, -1}) {
             int newRotation = ((current.rotation + dir) % 4 + 4) % 4;
             std::vector<core::Vec2i> kicks = core::GetWallKicks(kickType, current.rotation, newRotation);
-            const std::vector<core::Vec2i>& newCells = cellsByRotation[newRotation];
+            const std::vector<core::Vec2i>& newCells = mino.GetCells(newRotation);
 
             for (const auto& kick : kicks) {
                 core::Vec2i newPos = pos + kick;
@@ -96,7 +122,7 @@ std::vector<ReachablePlacement> SearchReachablePlacements(const core::Board& boa
             placement.position = pos;
             placement.cells.reserve(cells.size());
             for (const auto& c : cells) placement.cells.push_back(c + pos);
-            placement.path = currentPath;
+            placement.path = reconstructPath(currentIndex);
             results.push_back(std::move(placement));
         }
     }

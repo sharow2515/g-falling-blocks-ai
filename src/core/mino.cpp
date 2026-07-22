@@ -2,13 +2,20 @@
 
 namespace fb::core {
 
-std::vector<Vec2i> Mino::GetCells(int rotation) const {
-    std::vector<Vec2i> rotated;
-    rotated.reserve(baseCells.size());
-    for (const auto& cell : baseCells) {
-        rotated.push_back(RotateCell(cell, rotation));
+const std::vector<Vec2i>& Mino::GetCells(int rotation) const {
+    rotation = ((rotation % 4) + 4) % 4;
+
+    if (!cellsComputed_[rotation]) {
+        std::vector<Vec2i> rotated;
+        rotated.reserve(baseCells.size());
+        for (const auto& cell : baseCells) {
+            rotated.push_back(RotateCell(cell, rotation));
+        }
+        cellsByRotation_[rotation] = std::move(rotated);
+        cellsComputed_[rotation] = true;
     }
-    return rotated;
+
+    return cellsByRotation_[rotation];
 }
 
 Vec2i Mino::RotateCell(Vec2i cell, int rotation) const {

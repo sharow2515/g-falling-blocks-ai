@@ -19,7 +19,7 @@ struct RotationState {
 RotationState ApplyRotationStep(const core::Board& board, const core::Mino& mino, RotationState state,
                                  int direction) {
     int newRotation = ((state.rotation + direction) % 4 + 4) % 4;
-    std::vector<core::Vec2i> newCells = mino.GetCells(newRotation);
+    const std::vector<core::Vec2i>& newCells = mino.GetCells(newRotation);
 
     core::KickTableType kickType = core::SelectKickTable(mino.name, mino.gridSize);
     std::vector<core::Vec2i> kicks = core::GetWallKicks(kickType, state.rotation, newRotation);
