@@ -1,10 +1,10 @@
-#include "ai/heuristic/heuristic_player.hpp"
+#include "ai/simple/simple_player.hpp"
 
 #include <limits>
 
 #include "ai/common/move_execution.hpp"
-#include "ai/heuristic/evaluator.hpp"
-#include "ai/heuristic/placement.hpp"
+#include "ai/simple/evaluator.hpp"
+#include "ai/simple/placement.hpp"
 #include "core/wall_kick.hpp"
 
 namespace fb::ai {
@@ -35,7 +35,7 @@ RotationState ApplyRotationStep(const core::Board& board, const core::Mino& mino
 
 }  // namespace
 
-void HeuristicPlayer::Update(core::Game& game) {
+void SimplePlayer::Update(core::Game& game) {
     int spawnId = game.SpawnEventId();
     if (spawnId == lastSeenSpawnEventId_) return;
     lastSeenSpawnEventId_ = spawnId;
@@ -45,9 +45,9 @@ void HeuristicPlayer::Update(core::Game& game) {
     }
 }
 
-std::vector<PlayerMove> HeuristicPlayer::Plan(core::Game& game) { return BuildPlan(game); }
+std::vector<PlayerMove> SimplePlayer::Plan(core::Game& game) { return BuildPlan(game); }
 
-std::vector<PlayerMove> HeuristicPlayer::BuildPlan(core::Game& game) {
+std::vector<PlayerMove> SimplePlayer::BuildPlan(core::Game& game) {
     if (game.IsGameOver() || game.IsPaused()) return {};
     if (!game.GetActivePiece().IsActive()) return {};
 

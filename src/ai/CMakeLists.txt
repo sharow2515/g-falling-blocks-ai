@@ -3,9 +3,9 @@ add_library(ai STATIC
     common/reachable_search.cpp
     common/move_execution.cpp
     common/path_conversion.cpp
-    heuristic/placement.cpp
-    heuristic/evaluator.cpp
-    heuristic/heuristic_player.cpp
+    simple/placement.cpp
+    simple/evaluator.cpp
+    simple/simple_player.cpp
     reachability/evaluator.cpp
     reachability/reachability_player.cpp
     beam/evaluator.cpp

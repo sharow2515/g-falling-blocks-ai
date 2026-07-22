@@ -1,16 +1,16 @@
-#include "ai/heuristic/evaluator.hpp"
+#include "ai/simple/evaluator.hpp"
 
 #include "ai/common/board_features.hpp"
 
 namespace fb::ai {
 
-double Evaluate(const HeuristicFeatures& f) {
+double Evaluate(const SimpleFeatures& f) {
     return -1.0 * f.landingHeight + 1.0 * f.erodedPieceCells - 1.0 * f.rowTransitions -
            1.0 * f.columnTransitions - 4.0 * f.holes - 1.0 * f.cumulativeWells;
 }
 
-HeuristicFeatures ComputeFeatures(core::Board board, const Placement& placement, core::Color color) {
-    HeuristicFeatures f;
+SimpleFeatures ComputeFeatures(core::Board board, const Placement& placement, core::Color color) {
+    SimpleFeatures f;
     f.landingHeight = common::ComputeLandingHeight(placement.cells);
 
     board.PlacePiece(placement.cells, core::Vec2i{0, 0}, color);

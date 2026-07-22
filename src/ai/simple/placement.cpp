@@ -1,4 +1,4 @@
-#include "ai/heuristic/placement.hpp"
+#include "ai/simple/placement.hpp"
 
 #include <limits>
 
