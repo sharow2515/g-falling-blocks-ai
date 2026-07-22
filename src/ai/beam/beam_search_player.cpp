@@ -23,7 +23,7 @@ struct SpawnState {
 // どこから始まるか」を計算するためのもの。core::ActivePiece自体には手を入れず、
 // この用途専用にここでだけ複製している。
 std::optional<SpawnState> ComputeSpawnState(const core::Board& board, const core::Mino& mino) {
-    std::vector<core::Vec2i> cells = mino.GetCells(0);
+    const std::vector<core::Vec2i>& cells = mino.GetCells(0);
 
     int maxCellY = std::numeric_limits<int>::min();
     for (const auto& c : cells) {

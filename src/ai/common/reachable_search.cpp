@@ -1,7 +1,6 @@
 #include "ai/common/reachable_search.hpp"
 
 #include <algorithm>
-#include <array>
 #include <queue>
 
 #include "core/wall_kick.hpp"
@@ -41,10 +40,8 @@ std::vector<ReachablePlacement> SearchReachablePlacements(const core::Board& boa
                                                             int spawnRotation, core::Vec2i spawnPosition) {
     std::vector<ReachablePlacement> results;
 
-    // 回転ごとのセル形状はミノ・回転の組み合わせで固定なので先に計算しておく。
-    std::array<std::vector<core::Vec2i>, 4> cellsByRotation;
-    for (int r = 0; r < 4; ++r) cellsByRotation[r] = mino.GetCells(r);
-
+    // 回転ごとのセル形状はMino::GetCells内でキャッシュされているため、
+    // ここで改めて配列にコピーする必要はない。
     core::KickTableType kickType = core::SelectKickTable(mino.name, mino.gridSize);
 
     StateSpace space(board, mino.gridSize);
@@ -75,7 +72,7 @@ std::vector<ReachablePlacement> SearchReachablePlacements(const core::Board& boa
         pending.pop();
 
         core::Vec2i pos{current.x, current.y};
-        const std::vector<core::Vec2i>& cells = cellsByRotation[current.rotation];
+        const std::vector<core::Vec2i>& cells = mino.GetCells(current.rotation);
         int currentIndex = space.Index(current);
 
         auto tryVisit = [&](core::Vec2i newPos, int newRotation, MoveType moveType) {
@@ -105,7 +102,7 @@ std::vector<ReachablePlacement> SearchReachablePlacements(const core::Board& boa
         for (int dir : {1, -1}) {
             int newRotation = ((current.rotation + dir) % 4 + 4) % 4;
             std::vector<core::Vec2i> kicks = core::GetWallKicks(kickType, current.rotation, newRotation);
-            const std::vector<core::Vec2i>& newCells = cellsByRotation[newRotation];
+            const std::vector<core::Vec2i>& newCells = mino.GetCells(newRotation);
 
             for (const auto& kick : kicks) {
                 core::Vec2i newPos = pos + kick;

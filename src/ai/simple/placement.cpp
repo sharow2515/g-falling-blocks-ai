@@ -28,7 +28,7 @@ std::vector<Placement> EnumeratePlacements(const core::Board& board, const core:
     std::vector<Placement> placements;
 
     for (int rotation = 0; rotation < 4; ++rotation) {
-        std::vector<core::Vec2i> cells = mino.GetCells(rotation);
+        const std::vector<core::Vec2i>& cells = mino.GetCells(rotation);
 
         int minX = std::numeric_limits<int>::max();
         int maxX = std::numeric_limits<int>::min();
