@@ -21,7 +21,7 @@ sudo apt-get install libx11-dev libxrandr-dev libxcursor-dev libxi-dev libudev-d
 ```bash
 cmake --preset=default
 cmake --build build
-./build/FallingBlocks                    # ブロック20種類使用、AI: heuristic(デフォルト)
+./build/FallingBlocks                    # ブロック20種類使用、AI: simple(デフォルト)
 ./build/FallingBlocks --easy             # ブロック7種類使用
 ./build/FallingBlocks --hard             # ブロック20種類使用
 ./build/FallingBlocks --ai reachability  # 自動プレイに使うAIを切り替える
@@ -35,7 +35,7 @@ cmake --build build
 Aiの動きを可視化するモード
 
 ```bash
-./build/FallingBlocks --visualize                     # AI: heuristic(デフォルト)で可視化
+./build/FallingBlocks --visualize                     # AI: simple(デフォルト)で可視化
 ./build/FallingBlocks --visualize --ai reachability   # AIを切り替える
 ./build/FallingBlocks --visualize --ai-delay 0.1      # 1操作ごとの間隔(秒)を変更(デフォルト0.3)
 ./build/FallingBlocks --visualize --seed 123          # ミノの出現列を指定する(未指定ならランダム)
@@ -44,7 +44,7 @@ Aiの動きを可視化するモード
 
 ## AIベンチマーク
 
-`ai::AiPlayer`実装(`heuristic` / `reachability`)の性能を、ウィンドウなしで複数ゲーム連続実行して計測する。
+`ai::AiPlayer`実装(`simple` / `reachability`)の性能を、ウィンドウなしで複数ゲーム連続実行して計測する。
 
 ```bash
 ./build/Benchmark                              # デフォルト設定(後述)で実行

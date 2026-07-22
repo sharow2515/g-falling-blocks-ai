@@ -1,9 +1,10 @@
-#include "ai/heuristic/heuristic_player.hpp"
+#include "ai/simple/simple_player.hpp"
 
 #include <limits>
 
-#include "ai/heuristic/evaluator.hpp"
-#include "ai/heuristic/placement.hpp"
+#include "ai/common/move_execution.hpp"
+#include "ai/simple/evaluator.hpp"
+#include "ai/simple/placement.hpp"
 #include "core/wall_kick.hpp"
 
 namespace fb::ai {
@@ -32,33 +33,21 @@ RotationState ApplyRotationStep(const core::Board& board, const core::Mino& mino
     return state;
 }
 
-void ExecuteMove(core::Game& game, PlayerMove move) {
-    switch (move) {
-        case PlayerMove::Left: game.MoveLeft(); break;
-        case PlayerMove::Right: game.MoveRight(); break;
-        case PlayerMove::Down: game.MoveDown(); break;
-        case PlayerMove::RotateCW: game.RotateCW(); break;
-        case PlayerMove::RotateCCW: game.RotateCCW(); break;
-        case PlayerMove::Hold: game.Hold(); break;
-        case PlayerMove::HardDrop: game.HardDrop(); break;
-    }
-}
-
 }  // namespace
 
-void HeuristicPlayer::Update(core::Game& game) {
+void SimplePlayer::Update(core::Game& game) {
     int spawnId = game.SpawnEventId();
     if (spawnId == lastSeenSpawnEventId_) return;
     lastSeenSpawnEventId_ = spawnId;
 
     for (PlayerMove move : BuildPlan(game)) {
-        ExecuteMove(game, move);
+        common::ExecuteMove(game, move);
     }
 }
 
-std::vector<PlayerMove> HeuristicPlayer::Plan(core::Game& game) { return BuildPlan(game); }
+std::vector<PlayerMove> SimplePlayer::Plan(core::Game& game) { return BuildPlan(game); }
 
-std::vector<PlayerMove> HeuristicPlayer::BuildPlan(core::Game& game) {
+std::vector<PlayerMove> SimplePlayer::BuildPlan(core::Game& game) {
     if (game.IsGameOver() || game.IsPaused()) return {};
     if (!game.GetActivePiece().IsActive()) return {};
 

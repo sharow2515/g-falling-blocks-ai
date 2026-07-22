@@ -6,9 +6,9 @@
 #include <string>
 
 #include "ai/beam/beam_search_player.hpp"
-#include "ai/heuristic/heuristic_player.hpp"
 #include "ai/player.hpp"
 #include "ai/reachability/reachability_player.hpp"
+#include "ai/simple/simple_player.hpp"
 #include "app/ai_visualize_application.hpp"
 #include "app/application.hpp"
 
@@ -33,10 +33,10 @@ int ResolveIntOption(int argc, char** argv, const std::string& flag, int default
     return defaultValue;
 }
 
-// --ai heuristic(デフォルト) / --ai reachability / --ai beam
+// --ai simple(デフォルト) / --ai reachability / --ai beam
 //   (beamは --beam-width N / --beam-depth N (0〜5) を追加指定可能)。
 std::unique_ptr<fb::ai::AiPlayer> ResolveAiPlayer(int argc, char** argv) {
-    std::string name = "heuristic";
+    std::string name = "simple";
     for (int i = 1; i < argc; ++i) {
         std::string arg = argv[i];
         if (arg == "--ai" && i + 1 < argc) {
@@ -51,7 +51,7 @@ std::unique_ptr<fb::ai::AiPlayer> ResolveAiPlayer(int argc, char** argv) {
         int beamDepth = ResolveIntOption(argc, argv, "--beam-depth", 2);
         return std::make_unique<fb::ai::beam::BeamSearchPlayer>(beamWidth, beamDepth);
     }
-    return std::make_unique<fb::ai::HeuristicPlayer>();
+    return std::make_unique<fb::ai::SimplePlayer>();
 }
 
 // --visualize: 人間操作を持たない、AI観戦専用モードで起動する。

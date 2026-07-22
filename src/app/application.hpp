@@ -15,7 +15,7 @@ namespace fb::app {
 class Application {
 public:
     // minosJsonPath: 読み込むミノ定義ファイル(例: "assets/minos_hard.json")。
-    // aiPlayer: Aキーでトグルする自動プレイに使うAI(例: HeuristicPlayer/ReachabilityPlayer)。
+    // aiPlayer: Aキーでトグルする自動プレイに使うAI(例: SimplePlayer/ReachabilityPlayer)。
     // seed: 指定するとミノの出現列が再現可能になる。Restartキーでも同じシードを使い直す
     Application(const std::string& minosJsonPath, std::unique_ptr<ai::AiPlayer> aiPlayer,
                 std::optional<std::uint64_t> seed = std::nullopt);

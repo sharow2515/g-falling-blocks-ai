@@ -7,9 +7,9 @@
 #include <vector>
 
 #include "ai/beam/beam_search_player.hpp"
-#include "ai/heuristic/heuristic_player.hpp"
 #include "ai/player.hpp"
 #include "ai/reachability/reachability_player.hpp"
+#include "ai/simple/simple_player.hpp"
 #include "benchmark/runner.hpp"
 #include "core/mino_loader.hpp"
 
@@ -20,7 +20,7 @@ struct Options {
     std::uint64_t seedStart = 1;
     int maxLines = 500;
     std::string minosJsonPath = "assets/minos_hard.json";
-    std::string aiName = "heuristic";  // "heuristic" | "reachability" | "beam"
+    std::string aiName = "simple";  // "simple" | "reachability" | "beam"
     int beamWidth = 20;
     int beamDepth = 2;
 };
@@ -55,7 +55,7 @@ std::unique_ptr<fb::ai::AiPlayer> MakePlayer(const Options& opts) {
     if (opts.aiName == "beam") {
         return std::make_unique<fb::ai::beam::BeamSearchPlayer>(opts.beamWidth, opts.beamDepth);
     }
-    return std::make_unique<fb::ai::HeuristicPlayer>();
+    return std::make_unique<fb::ai::SimplePlayer>();
 }
 
 }  // namespace

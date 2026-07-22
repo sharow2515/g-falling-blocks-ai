@@ -6,7 +6,7 @@
 #include "core/mino.hpp"
 #include "core/types.hpp"
 
-namespace fb::ai::reachability {
+namespace fb::ai::common {
 
 enum class MoveType {
     Left,
@@ -23,7 +23,10 @@ struct ReachablePlacement {
     std::vector<MoveType> path;
 };
 
+// board上でmino(spawnRotation, spawnPositionから開始)が、実際の移動・回転
+// (ウォールキック含む)の組み合わせで到達しうる、これ以上下に動けない状態を
+// 全て列挙する(BFS)。
 std::vector<ReachablePlacement> SearchReachablePlacements(const core::Board& board, const core::Mino& mino,
                                                             int spawnRotation, core::Vec2i spawnPosition);
 
-}  // namespace fb::ai::reachability
+}  // namespace fb::ai::common

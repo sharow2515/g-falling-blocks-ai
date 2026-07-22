@@ -1,10 +1,29 @@
-#include "ai/heuristic/evaluator.hpp"
+#include "ai/common/board_features.hpp"
 
+#include <algorithm>
 #include <limits>
 
-namespace fb::ai {
+namespace fb::ai::common {
 
-namespace {
+double ComputeLandingHeight(const std::vector<core::Vec2i>& cells) {
+    int minRow = std::numeric_limits<int>::max();
+    int maxRow = std::numeric_limits<int>::min();
+    for (const auto& c : cells) {
+        minRow = std::min(minRow, c.y);
+        maxRow = std::max(maxRow, c.y);
+    }
+    return (minRow + maxRow) / 2.0;
+}
+
+double ComputeErodedPieceCells(const std::vector<core::Vec2i>& cells, const std::vector<int>& clearedRows) {
+    int erodedCellCount = 0;
+    for (int row : clearedRows) {
+        for (const auto& c : cells) {
+            if (c.y == row) ++erodedCellCount;
+        }
+    }
+    return static_cast<double>(clearedRows.size()) * static_cast<double>(erodedCellCount);
+}
 
 int CountHoles(const core::Board& board) {
     int holes = 0;
@@ -25,7 +44,7 @@ int CountHoles(const core::Board& board) {
 int CountRowTransitions(const core::Board& board) {
     int transitions = 0;
     for (int y = 0; y < board.Height(); ++y) {
-        bool prevFilled = true;
+        bool prevFilled = true;  // 左の壁は「埋」扱い
         for (int x = 0; x <= board.Width(); ++x) {
             bool filled = (x == board.Width()) ? true : board.CellColor({x, y}).has_value();
             if (filled != prevFilled) ++transitions;
@@ -38,7 +57,7 @@ int CountRowTransitions(const core::Board& board) {
 int CountColumnTransitions(const core::Board& board) {
     int transitions = 0;
     for (int x = 0; x < board.Width(); ++x) {
-        bool prevFilled = true;
+        bool prevFilled = true;  // 床は「埋」扱い
         for (int y = 0; y < board.Height(); ++y) {
             bool filled = board.CellColor({x, y}).has_value();
             if (filled != prevFilled) ++transitions;
@@ -69,47 +88,4 @@ int CountCumulativeWells(const core::Board& board) {
     return cumulative;
 }
 
-}  // namespace
-
-double Evaluate(const HeuristicFeatures& f) {
-    return -1.0 * f.landingHeight + 1.0 * f.erodedPieceCells - 1.0 * f.rowTransitions -
-           1.0 * f.columnTransitions - 4.0 * f.holes - 1.0 * f.cumulativeWells;
-}
-
-HeuristicFeatures ComputeFeatures(core::Board board, const Placement& placement, core::Color color) {
-    HeuristicFeatures f;
-
-    int minRow = std::numeric_limits<int>::max();
-    int maxRow = std::numeric_limits<int>::min();
-    for (const auto& c : placement.cells) {
-        minRow = std::min(minRow, c.y);
-        maxRow = std::max(maxRow, c.y);
-    }
-    f.landingHeight = (minRow + maxRow) / 2.0;
-
-    board.PlacePiece(placement.cells, core::Vec2i{0, 0}, color);
-
-    std::vector<int> clearedRows;
-    int lines = board.ClearFullLines(clearedRows);
-
-    int erodedCellCount = 0;
-    for (int row : clearedRows) {
-        for (const auto& c : placement.cells) {
-            if (c.y == row) ++erodedCellCount;
-        }
-    }
-    f.erodedPieceCells = static_cast<double>(lines) * static_cast<double>(erodedCellCount);
-
-    f.holes = CountHoles(board);
-    f.rowTransitions = CountRowTransitions(board);
-    f.columnTransitions = CountColumnTransitions(board);
-    f.cumulativeWells = CountCumulativeWells(board);
-
-    return f;
-}
-
-double ScorePlacement(const core::Board& board, const Placement& placement, core::Color color) {
-    return Evaluate(ComputeFeatures(board, placement, color));
-}
-
-}  // namespace fb::ai
+}  // namespace fb::ai::common
