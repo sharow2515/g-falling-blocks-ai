@@ -1,4 +1,4 @@
-#include "ai/beam/reachable_placement.hpp"
+#include "ai/common/reachable_search.hpp"
 
 #include <array>
 #include <map>
@@ -7,7 +7,7 @@
 
 #include "core/wall_kick.hpp"
 
-namespace fb::ai::beam {
+namespace fb::ai::common {
 
 namespace {
 
@@ -29,6 +29,7 @@ std::vector<ReachablePlacement> SearchReachablePlacements(const core::Board& boa
                                                             int spawnRotation, core::Vec2i spawnPosition) {
     std::vector<ReachablePlacement> results;
 
+    // 回転ごとのセル形状はミノ・回転の組み合わせで固定なので先に計算しておく。
     std::array<std::vector<core::Vec2i>, 4> cellsByRotation;
     for (int r = 0; r < 4; ++r) cellsByRotation[r] = mino.GetCells(r);
 
@@ -59,6 +60,7 @@ std::vector<ReachablePlacement> SearchReachablePlacements(const core::Board& boa
             pending.push(newKey);
         };
 
+        // 左右下への移動
         if (board.IsValidPosition(cells, pos + core::Vec2i::Left())) {
             tryVisit(pos + core::Vec2i::Left(), current.rotation, MoveType::Left);
         }
@@ -69,6 +71,8 @@ std::vector<ReachablePlacement> SearchReachablePlacements(const core::Board& boa
             tryVisit(pos + core::Vec2i::Down(), current.rotation, MoveType::Down);
         }
 
+        // 回転(時計回り・反時計回り)。ActivePiece::Rotateと同じく、
+        // キック候補を順番に試して最初に成立したものだけを採用する。
         for (int dir : {1, -1}) {
             int newRotation = ((current.rotation + dir) % 4 + 4) % 4;
             std::vector<core::Vec2i> kicks = core::GetWallKicks(kickType, current.rotation, newRotation);
@@ -84,6 +88,8 @@ std::vector<ReachablePlacement> SearchReachablePlacements(const core::Board& boa
             }
         }
 
+        // これ以上下に動けなければ「置ける場所」の候補として記録する
+        // 探索は打ち切らない
         if (!board.IsValidPosition(cells, pos + core::Vec2i::Down())) {
             ReachablePlacement placement;
             placement.rotation = current.rotation;
@@ -98,4 +104,4 @@ std::vector<ReachablePlacement> SearchReachablePlacements(const core::Board& boa
     return results;
 }
 
-}  // namespace fb::ai::beam
+}  // namespace fb::ai::common

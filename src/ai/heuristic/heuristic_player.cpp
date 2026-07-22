@@ -2,6 +2,7 @@
 
 #include <limits>
 
+#include "ai/common/move_execution.hpp"
 #include "ai/heuristic/evaluator.hpp"
 #include "ai/heuristic/placement.hpp"
 #include "core/wall_kick.hpp"
@@ -32,18 +33,6 @@ RotationState ApplyRotationStep(const core::Board& board, const core::Mino& mino
     return state;
 }
 
-void ExecuteMove(core::Game& game, PlayerMove move) {
-    switch (move) {
-        case PlayerMove::Left: game.MoveLeft(); break;
-        case PlayerMove::Right: game.MoveRight(); break;
-        case PlayerMove::Down: game.MoveDown(); break;
-        case PlayerMove::RotateCW: game.RotateCW(); break;
-        case PlayerMove::RotateCCW: game.RotateCCW(); break;
-        case PlayerMove::Hold: game.Hold(); break;
-        case PlayerMove::HardDrop: game.HardDrop(); break;
-    }
-}
-
 }  // namespace
 
 void HeuristicPlayer::Update(core::Game& game) {
@@ -52,7 +41,7 @@ void HeuristicPlayer::Update(core::Game& game) {
     lastSeenSpawnEventId_ = spawnId;
 
     for (PlayerMove move : BuildPlan(game)) {
-        ExecuteMove(game, move);
+        common::ExecuteMove(game, move);
     }
 }
 

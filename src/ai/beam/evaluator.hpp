@@ -7,7 +7,7 @@
 
 namespace fb::ai::beam {
 
-// ai::reachability::evaluator の独立コピー。
+// ai::reachability::evaluator と同じ6特徴量。
 struct Features {
     double landingHeight = 0.0;
     double erodedPieceCells = 0.0;
@@ -25,11 +25,5 @@ double Evaluate(const Features& features);
 // cellsは配置時のワールド座標(消去前)、clearedRowsはそのときの消去行番号のリスト。
 Features ComputeFeaturesFromClearedBoard(const core::Board& clearedBoard, const std::vector<core::Vec2i>& cells,
                                           const std::vector<int>& clearedRows);
-
-// cellsをboard(コピー)に仮配置し、ライン消去まで行った上で特徴量を計算する。
-// board自体は変更しない(呼び出し側の値渡しコピーに対して操作する)。
-Features ComputeFeatures(core::Board board, const std::vector<core::Vec2i>& cells, core::Color color);
-
-double ScorePlacement(const core::Board& board, const std::vector<core::Vec2i>& cells, core::Color color);
 
 }  // namespace fb::ai::beam

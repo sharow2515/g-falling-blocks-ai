@@ -5,7 +5,9 @@
 #include <optional>
 
 #include "ai/beam/evaluator.hpp"
-#include "ai/beam/reachable_placement.hpp"
+#include "ai/common/move_execution.hpp"
+#include "ai/common/path_conversion.hpp"
+#include "ai/common/reachable_search.hpp"
 
 namespace fb::ai::beam {
 
@@ -45,27 +47,6 @@ std::optional<SpawnState> ComputeSpawnState(const core::Board& board, const core
     return SpawnState{0, pos};
 }
 
-std::vector<PlayerMove> ConvertPath(const std::vector<MoveType>& path) {
-    std::vector<MoveType> trimmed = path;
-    while (!trimmed.empty() && trimmed.back() == MoveType::Down) {
-        trimmed.pop_back();
-    }
-
-    std::vector<PlayerMove> plan;
-    plan.reserve(trimmed.size() + 1);
-    for (MoveType move : trimmed) {
-        switch (move) {
-            case MoveType::Left: plan.push_back(PlayerMove::Left); break;
-            case MoveType::Right: plan.push_back(PlayerMove::Right); break;
-            case MoveType::Down: plan.push_back(PlayerMove::Down); break;
-            case MoveType::RotateCW: plan.push_back(PlayerMove::RotateCW); break;
-            case MoveType::RotateCCW: plan.push_back(PlayerMove::RotateCCW); break;
-        }
-    }
-    plan.push_back(PlayerMove::HardDrop);
-    return plan;
-}
-
 // ビームサーチ中の1候補。
 // Holdにより、ノードごとに「sequence中どこまで消費し終えたか(seqIndex)」が
 // 異なりうる(初回Holdは1手で2個消費するため)。
@@ -85,8 +66,8 @@ void ExpandOption(const BeamNode& node, const core::Mino& pieceToPlace, bool use
     std::optional<SpawnState> spawn = ComputeSpawnState(node.board, pieceToPlace);
     if (!spawn.has_value()) return;  // このピースはこの盤面には出現できない(手詰まり)
 
-    std::vector<ReachablePlacement> placements =
-        SearchReachablePlacements(node.board, pieceToPlace, spawn->rotation, spawn->position);
+    std::vector<common::ReachablePlacement> placements =
+        common::SearchReachablePlacements(node.board, pieceToPlace, spawn->rotation, spawn->position);
 
     for (const auto& placement : placements) {
         core::Board newBoard = node.board;
@@ -109,7 +90,7 @@ void ExpandOption(const BeamNode& node, const core::Mino& pieceToPlace, bool use
         } else {
             // この系統の1手目を今ここで決定する。
             if (usedHold) child.firstMove.push_back(PlayerMove::Hold);
-            std::vector<PlayerMove> converted = ConvertPath(placement.path);
+            std::vector<PlayerMove> converted = common::ConvertPath(placement.path);
             child.firstMove.insert(child.firstMove.end(), converted.begin(), converted.end());
         }
 
@@ -137,15 +118,7 @@ void BeamSearchPlayer::Update(core::Game& game) {
     lastSeenSpawnEventId_ = spawnId;
 
     for (PlayerMove move : BuildPlan(game)) {
-        switch (move) {
-            case PlayerMove::Left: game.MoveLeft(); break;
-            case PlayerMove::Right: game.MoveRight(); break;
-            case PlayerMove::Down: game.MoveDown(); break;
-            case PlayerMove::RotateCW: game.RotateCW(); break;
-            case PlayerMove::RotateCCW: game.RotateCCW(); break;
-            case PlayerMove::Hold: game.Hold(); break;
-            case PlayerMove::HardDrop: game.HardDrop(); break;
-        }
+        common::ExecuteMove(game, move);
     }
 }
 
