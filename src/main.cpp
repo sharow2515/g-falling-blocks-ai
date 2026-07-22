@@ -1,6 +1,8 @@
 #include <cstdlib>
+#include <cstdint>
 #include <iostream>
 #include <memory>
+#include <optional>
 #include <string>
 
 #include "ai/beam/beam_search_player.hpp"
@@ -71,10 +73,22 @@ float ResolveAiDelay(int argc, char** argv) {
     return 0.3f;
 }
 
+// --seed N: ミノの出現列を固定する(Restartでも同じシードを使い直す)。未指定ならランダム。
+std::optional<std::uint64_t> ResolveSeed(int argc, char** argv) {
+    for (int i = 1; i < argc; ++i) {
+        std::string arg = argv[i];
+        if (arg == "--seed" && i + 1 < argc) {
+            return static_cast<std::uint64_t>(std::atoll(argv[++i]));
+        }
+    }
+    return std::nullopt;
+}
+
 }  // namespace
 
 int main(int argc, char** argv) {
     std::string minosJsonPath = ResolveMinosJsonPath(argc, argv);
+    std::optional<std::uint64_t> seed = ResolveSeed(argc, argv);
 
     std::unique_ptr<fb::ai::AiPlayer> aiPlayer;
     try {
@@ -85,10 +99,10 @@ int main(int argc, char** argv) {
     }
 
     if (HasVisualizeFlag(argc, argv)) {
-        fb::app::AiVisualizeApplication app(minosJsonPath, std::move(aiPlayer), ResolveAiDelay(argc, argv));
+        fb::app::AiVisualizeApplication app(minosJsonPath, std::move(aiPlayer), ResolveAiDelay(argc, argv), seed);
         return app.Run();
     }
 
-    fb::app::Application app(minosJsonPath, std::move(aiPlayer));
+    fb::app::Application app(minosJsonPath, std::move(aiPlayer), seed);
     return app.Run();
 }

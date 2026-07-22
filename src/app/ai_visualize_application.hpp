@@ -1,6 +1,8 @@
 #pragma once
 
+#include <cstdint>
 #include <memory>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -26,13 +28,15 @@ public:
     // minosJsonPath: 読み込むミノ定義ファイル。
     // aiPlayer: 自動プレイに使うAI。
     // moveDelay: 1操作ごとに置く間隔(秒)。目で追えるようにするための演出用。
+    // seed: 指定するとミノの出現列が再現可能になる。Restartキーでも同じシードを使い直す
     AiVisualizeApplication(const std::string& minosJsonPath, std::unique_ptr<ai::AiPlayer> aiPlayer,
-                           float moveDelay = 0.3f);
+                           float moveDelay = 0.3f, std::optional<std::uint64_t> seed = std::nullopt);
 
     int Run();
 
 private:
     void ExecuteMove(ai::PlayerMove move);
+    std::uint64_t NextSeed() const;
 
     core::Game game_;
     std::unique_ptr<ai::AiPlayer> ai_;
@@ -41,6 +45,7 @@ private:
     float moveDelay_;
     float cooldownTimer_ = 0.f;
     std::vector<ai::PlayerMove> pendingMoves_;  // 現在のピースについて、まだ再生していない操作列
+    std::optional<std::uint64_t> fixedSeed_;
 
     bool prevRestartPressed_ = false;  // Restartキーのエッジ検出用
 };
