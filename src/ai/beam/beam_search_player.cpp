@@ -205,59 +205,84 @@ std::vector<PlayerMove> BeamSearchPlayer::BuildPlan(core::Game& game) {
     // sequenceを全ノードが読み切るまで繰り返す。初回Hold(Hold空の状態からHoldする)は
     // 1手でsequenceを2個消費するため、ノードごとに消費済み位置(seqIndex)が異なりうる
     // (=ステップ数が固定にならない)。
-    while (true) {
-        bool anyPending = false;
-        for (const auto& node : beam) {
-            if (node.seqIndex < sequenceSize) {
-                anyPending = true;
-                break;
+    //
+    // #pragma omp parallelでスレッドチームをループ全体で1回だけ作り、ラウンドごとの
+    // チーム編成・解体のオーバーヘッドをなくす。逐次部分はsingleで1スレッドだけ実行し、
+    // (暗黙のバリアにより)全スレッドがbeam/tasks/perTaskResults/refsを同じタイミングで
+    // 同じ内容として見られるようにしている。これらの変数はparallelの外側(ここ)で
+    // 宣言しているのでスレッド間で共有される。
+    bool anyPending = false;
+    std::vector<ExpandTask> tasks;
+    std::vector<std::vector<BeamNode>> perTaskResults;
+    std::vector<CandidateRef> refs;
+    std::vector<BeamNode> nextBeam;
+
+#pragma omp parallel default(shared)
+    {
+        while (true) {
+#pragma omp single
+            {
+                anyPending = false;
+                for (const auto& node : beam) {
+                    if (node.seqIndex < sequenceSize) {
+                        anyPending = true;
+                        break;
+                    }
+                }
+                if (anyPending) {
+                    tasks = BuildExpandTasks(beam, sequence, sequenceSize);
+                    perTaskResults.assign(tasks.size(), {});
+                }
+            }  // 全スレッドがここでanyPending/tasks/perTaskResultsを同じ値で見る
+
+            if (!anyPending) break;
+
+#pragma omp for schedule(dynamic)
+            for (int i = 0; i < static_cast<int>(tasks.size()); ++i) {
+                const ExpandTask& task = tasks[i];
+                if (task.isCarryOver) {
+                    perTaskResults[static_cast<std::size_t>(i)].push_back(*task.node);  // そのまま持ち越す。
+                    continue;
+                }
+                ExpandOption(*task.node, *task.pieceToPlace, task.usedHold, task.newHoldMino, task.newSeqIndex,
+                             perTaskResults[static_cast<std::size_t>(i)]);
+            }  // 全スレッドのExpandOptionが完了してから先に進む
+
+#pragma omp single
+            {
+                refs.clear();
+                std::size_t totalCandidates = 0;
+                for (const auto& result : perTaskResults) totalCandidates += result.size();
+                refs.reserve(totalCandidates);
+                for (int i = 0; i < static_cast<int>(perTaskResults.size()); ++i) {
+                    const auto& result = perTaskResults[static_cast<std::size_t>(i)];
+                    for (int j = 0; j < static_cast<int>(result.size()); ++j) {
+                        refs.push_back(CandidateRef{result[static_cast<std::size_t>(j)].score, i, j});
+                    }
+                }
+
+                if (!refs.empty()) {
+                    // 上位beam-width件だけ分かればいいので、全件ソートせずpartial_sortで済ませる。
+                    std::size_t keep = std::min(refs.size(), static_cast<std::size_t>(beamWidth_));
+                    std::partial_sort(refs.begin(), refs.begin() + static_cast<std::ptrdiff_t>(keep), refs.end(),
+                                       [](const CandidateRef& a, const CandidateRef& b) {
+                                           if (a.score != b.score) return a.score > b.score;
+                                           if (a.taskIdx != b.taskIdx) return a.taskIdx < b.taskIdx;
+                                           return a.resultIdx < b.resultIdx;
+                                       });
+                    nextBeam.clear();
+                    nextBeam.reserve(keep);
+                    for (std::size_t k = 0; k < keep; ++k) {
+                        const CandidateRef& ref = refs[k];
+                        nextBeam.push_back(std::move(perTaskResults[static_cast<std::size_t>(ref.taskIdx)]
+                                                                    [static_cast<std::size_t>(ref.resultIdx)]));
+                    }
+                    beam = std::move(nextBeam);
+                }
             }
+
+            if (refs.empty()) break;  // どの候補からも置けなくなった(それ以上先は読めない)
         }
-        if (!anyPending) break;
-
-        std::vector<ExpandTask> tasks = BuildExpandTasks(beam, sequence, sequenceSize);
-        std::vector<std::vector<BeamNode>> perTaskResults(tasks.size());
-
-#pragma omp parallel for schedule(dynamic)
-        for (int i = 0; i < static_cast<int>(tasks.size()); ++i) {
-            const ExpandTask& task = tasks[i];
-            if (task.isCarryOver) {
-                perTaskResults[static_cast<std::size_t>(i)].push_back(*task.node);  // そのまま持ち越す。
-                continue;
-            }
-            ExpandOption(*task.node, *task.pieceToPlace, task.usedHold, task.newHoldMino, task.newSeqIndex,
-                         perTaskResults[static_cast<std::size_t>(i)]);
-        }
-
-        std::vector<CandidateRef> refs;
-        std::size_t totalCandidates = 0;
-        for (const auto& result : perTaskResults) totalCandidates += result.size();
-        refs.reserve(totalCandidates);
-        for (int i = 0; i < static_cast<int>(perTaskResults.size()); ++i) {
-            const auto& result = perTaskResults[static_cast<std::size_t>(i)];
-            for (int j = 0; j < static_cast<int>(result.size()); ++j) {
-                refs.push_back(CandidateRef{result[static_cast<std::size_t>(j)].score, i, j});
-            }
-        }
-
-        if (refs.empty()) break;  // どの候補からも置けなくなった(それ以上先は読めない)
-
-        // 上位beam-width件だけ分かればいいので、全件ソートせずpartial_sortで済ませる。
-        std::size_t keep = std::min(refs.size(), static_cast<std::size_t>(beamWidth_));
-        std::partial_sort(refs.begin(), refs.begin() + static_cast<std::ptrdiff_t>(keep), refs.end(),
-                           [](const CandidateRef& a, const CandidateRef& b) {
-                               if (a.score != b.score) return a.score > b.score;
-                               if (a.taskIdx != b.taskIdx) return a.taskIdx < b.taskIdx;
-                               return a.resultIdx < b.resultIdx;
-                           });
-        std::vector<BeamNode> nextBeam;
-        nextBeam.reserve(keep);
-        for (std::size_t k = 0; k < keep; ++k) {
-            const CandidateRef& ref = refs[k];
-            nextBeam.push_back(std::move(
-                perTaskResults[static_cast<std::size_t>(ref.taskIdx)][static_cast<std::size_t>(ref.resultIdx)]));
-        }
-        beam = std::move(nextBeam);
     }
 
     if (beam.empty()) return {};
