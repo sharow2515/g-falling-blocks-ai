@@ -1,6 +1,8 @@
 #include "ai/common/board_features.hpp"
 
 #include <algorithm>
+#include <cassert>
+#include <cstdint>
 #include <limits>
 
 namespace fb::ai::common {
@@ -42,14 +44,17 @@ int CountHoles(const OccupancyGrid& grid) {
 }
 
 int CountRowTransitions(const OccupancyGrid& grid) {
+    const int width = grid.Width();
+    assert(width <= 30 && "この関数のビット演算はwidth+2ビットがuint32_tに収まる範囲でのみ正しい");
+
+    // 「左壁(埋)+行のビット列+右壁(埋)」というwidth+2ビットの値を作り、
+    // 隣接ビットの不一致数(width+1回の比較)を1回のpopcountで数える。
+    const std::uint32_t compareMask = (1u << (width + 1)) - 1u;
+
     int transitions = 0;
     for (int y = 0; y < grid.VisibleHeight(); ++y) {
-        bool prevFilled = true;  // 左の壁は「埋」扱い
-        for (int x = 0; x <= grid.Width(); ++x) {
-            bool filled = (x == grid.Width()) ? true : grid.IsOccupied({x, y});
-            if (filled != prevFilled) ++transitions;
-            prevFilled = filled;
-        }
+        std::uint32_t extended = 1u | (grid.RowBits(y) << 1) | (1u << (width + 1));
+        transitions += __builtin_popcount((extended ^ (extended >> 1)) & compareMask);
     }
     return transitions;
 }

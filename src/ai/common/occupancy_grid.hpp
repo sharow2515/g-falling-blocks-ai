@@ -36,6 +36,10 @@ public:
         return ((rows_[static_cast<std::size_t>(pos.y)] >> pos.x) & 1u) != 0;
     }
 
+    // y行目の生のビット列(bit x = 列xが埋まっているか)。ビット演算で複数セルを
+    // まとめて扱いたい特徴量計算のために公開している。
+    [[nodiscard]] std::uint32_t RowBits(int y) const { return rows_[static_cast<std::size_t>(y)]; }
+
     [[nodiscard]] bool IsValidPosition(const std::vector<core::Vec2i>& cells, core::Vec2i position) const {
         for (const auto& cell : cells) {
             core::Vec2i boardPos = position + cell;
