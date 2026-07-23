@@ -21,6 +21,7 @@ namespace fb::ai::common {
 class OccupancyGrid {
 public:
     static constexpr int kMaxRows = 64;
+    static constexpr int kMaxCols = 32;
 
     // 幅0・高さ0の空の状態。BeamNodeのデフォルト構築のためだけに存在し、
     // 実際に使う前に必ずexplicit OccupancyGrid(const core::Board&)で作った値で上書きされる。
@@ -40,6 +41,11 @@ public:
     // まとめて扱いたい特徴量計算のために公開している。
     [[nodiscard]] std::uint32_t RowBits(int y) const { return rows_[static_cast<std::size_t>(y)]; }
 
+    // x列目の生のビット列(bit y = 行yが埋まっているか。バッファ域も含む全高分)。
+    // rows_と冗長に持っているだけで、意味する状態は常に同じ(PlacePiece/ClearFullLinesで両方更新する)。
+    // 見えている範囲だけが必要な呼び出し側は、自分でVisibleHeight()分のマスクをかけること。
+    [[nodiscard]] std::uint32_t ColBits(int x) const { return cols_[static_cast<std::size_t>(x)]; }
+
     [[nodiscard]] bool IsValidPosition(const std::vector<core::Vec2i>& cells, core::Vec2i position) const {
         for (const auto& cell : cells) {
             core::Vec2i boardPos = position + cell;
@@ -55,6 +61,7 @@ public:
             core::Vec2i pos = position + cell;
             if (IsInsideBoard(pos)) {
                 rows_[static_cast<std::size_t>(pos.y)] |= (1u << pos.x);
+                cols_[static_cast<std::size_t>(pos.x)] |= (1u << pos.y);
             }
         }
     }
@@ -72,10 +79,19 @@ public:
         const int linesCleared = static_cast<int>(clearedRows.size());
         for (std::size_t i = 0; i < clearedRows.size(); ++i) {
             int y = clearedRows[i] - static_cast<int>(i);
+
             for (int shiftY = y; shiftY < height_ - 1; ++shiftY) {
                 rows_[static_cast<std::size_t>(shiftY)] = rows_[static_cast<std::size_t>(shiftY + 1)];
             }
             rows_[static_cast<std::size_t>(height_ - 1)] = 0;
+
+            // cols_側も、削除した行yに対応するビットを各列から取り除いて上位ビットを1つ詰める。
+            // rows_と同じく全高分を追跡しているので、バッファ域からのシフトインも正しく反映される。
+            const std::uint32_t lowMask = (1u << y) - 1u;
+            for (int x = 0; x < width_; ++x) {
+                std::uint32_t& col = cols_[static_cast<std::size_t>(x)];
+                col = (col & lowMask) | ((col >> 1) & ~lowMask);
+            }
         }
         return linesCleared;
     }
@@ -94,6 +110,7 @@ private:
     int height_ = 0;
     int visibleHeight_ = 0;
     std::array<std::uint32_t, kMaxRows> rows_{};  // 1行1ワード。bit x = 列x。行インデックス = y。
+    std::array<std::uint32_t, kMaxCols> cols_{};  // 1列1ワード。bit y = 行y(全高分)。列インデックス = x。
 };
 
 }  // namespace fb::ai::common
