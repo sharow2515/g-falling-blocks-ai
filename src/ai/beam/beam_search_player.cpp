@@ -98,6 +98,46 @@ void ExpandOption(const BeamNode& node, const core::Mino& pieceToPlace, bool use
     }
 }
 
+// 1ラウンド分の展開作業の単位(ノード×パターン)。並列化の粒度として使う。
+struct ExpandTask {
+    const BeamNode* node = nullptr;
+    bool isCarryOver = false;  // true: 展開せずnodeをそのまま持ち越すだけ
+    const core::Mino* pieceToPlace = nullptr;
+    bool usedHold = false;
+    const core::Mino* newHoldMino = nullptr;
+    int newSeqIndex = 0;
+};
+
+// beamの各ノードに対して、このラウンドで試すべきタスク(展開パターン)を列挙する。
+// 元の逐次ループと全く同じ順序で列挙するため、ここで作ったタスク列を
+// タスク番号順に結合すれば、並列実行してもnextBeamの並びは逐次版と完全に一致する。
+std::vector<ExpandTask> BuildExpandTasks(const std::vector<BeamNode>& beam,
+                                          const std::vector<const core::Mino*>& sequence, int sequenceSize) {
+    std::vector<ExpandTask> tasks;
+    for (const BeamNode& node : beam) {
+        if (node.seqIndex >= sequenceSize) {
+            tasks.push_back(ExpandTask{&node, /*isCarryOver=*/true});
+            continue;
+        }
+
+        // (a) sequence[seqIndex] をそのまま置く(Holdしない)。
+        tasks.push_back(ExpandTask{&node, false, sequence[node.seqIndex], false, node.holdMino, node.seqIndex + 1});
+
+        // (b) スワップHold: Hold中の駒を出して置き、sequence[seqIndex]をHoldに預ける。
+        if (node.holdMino != nullptr) {
+            tasks.push_back(
+                ExpandTask{&node, false, node.holdMino, true, sequence[node.seqIndex], node.seqIndex + 1});
+        }
+
+        // (c) 初回Hold: Holdが空。sequence[seqIndex]をHoldに預け、次のsequence[seqIndex+1]を置く。
+        if (node.holdMino == nullptr && node.seqIndex + 1 < sequenceSize) {
+            tasks.push_back(ExpandTask{&node, false, sequence[node.seqIndex + 1], true, sequence[node.seqIndex],
+                                        node.seqIndex + 2});
+        }
+    }
+    return tasks;
+}
+
 }  // namespace
 
 BeamSearchPlayer::BeamSearchPlayer(int beamWidth, int searchDepth)
@@ -144,6 +184,15 @@ std::vector<PlayerMove> BeamSearchPlayer::BuildPlan(core::Game& game) {
     root.board = game.GetBoard();
     root.holdMino = game.GetHoldMino();
     root.seqIndex = 0;
+
+    std::vector<const core::Mino*> minosToWarm = sequence;
+    if (root.holdMino != nullptr) minosToWarm.push_back(root.holdMino);
+    std::sort(minosToWarm.begin(), minosToWarm.end());
+    minosToWarm.erase(std::unique(minosToWarm.begin(), minosToWarm.end()), minosToWarm.end());
+    for (const core::Mino* m : minosToWarm) {
+        for (int r = 0; r < 4; ++r) static_cast<void>(m->GetCells(r));
+    }
+
     beam.push_back(std::move(root));
 
     // sequenceを全ノードが読み切るまで繰り返す。初回Hold(Hold空の状態からHoldする)は
@@ -159,29 +208,23 @@ std::vector<PlayerMove> BeamSearchPlayer::BuildPlan(core::Game& game) {
         }
         if (!anyPending) break;
 
-        std::vector<BeamNode> nextBeam;
+        std::vector<ExpandTask> tasks = BuildExpandTasks(beam, sequence, sequenceSize);
+        std::vector<std::vector<BeamNode>> perTaskResults(tasks.size());
 
-        for (const BeamNode& node : beam) {
-            if (node.seqIndex >= sequenceSize) {
-                nextBeam.push_back(node);  // 既に読み切っている。そのまま持ち越す。
+#pragma omp parallel for schedule(dynamic)
+        for (int i = 0; i < static_cast<int>(tasks.size()); ++i) {
+            const ExpandTask& task = tasks[i];
+            if (task.isCarryOver) {
+                perTaskResults[static_cast<std::size_t>(i)].push_back(*task.node);  // そのまま持ち越す。
                 continue;
             }
+            ExpandOption(*task.node, *task.pieceToPlace, task.usedHold, task.newHoldMino, task.newSeqIndex,
+                         perTaskResults[static_cast<std::size_t>(i)]);
+        }
 
-            // (a) sequence[seqIndex] をそのまま置く(Holdしない)。
-            ExpandOption(node, *sequence[node.seqIndex], /*usedHold=*/false, node.holdMino, node.seqIndex + 1,
-                         nextBeam);
-
-            // (b) スワップHold: Hold中の駒を出して置き、sequence[seqIndex]をHoldに預ける。
-            if (node.holdMino != nullptr) {
-                ExpandOption(node, *node.holdMino, /*usedHold=*/true, sequence[node.seqIndex],
-                             node.seqIndex + 1, nextBeam);
-            }
-
-            // (c) 初回Hold: Holdが空。sequence[seqIndex]をHoldに預け、次のsequence[seqIndex+1]を置く。
-            if (node.holdMino == nullptr && node.seqIndex + 1 < sequenceSize) {
-                ExpandOption(node, *sequence[node.seqIndex + 1], /*usedHold=*/true, sequence[node.seqIndex],
-                             node.seqIndex + 2, nextBeam);
-            }
+        std::vector<BeamNode> nextBeam;
+        for (auto& result : perTaskResults) {
+            for (auto& child : result) nextBeam.push_back(std::move(child));
         }
 
         if (nextBeam.empty()) break;  // どの候補からも置けなくなった(それ以上先は読めない)
