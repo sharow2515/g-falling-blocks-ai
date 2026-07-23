@@ -20,7 +20,7 @@ RotationState ApplyRotationStep(const core::Board& board, const core::Mino& mino
     const std::vector<core::Vec2i>& newCells = mino.GetCells(newRotation);
 
     core::KickTableType kickType = core::SelectKickTable(mino.name, mino.gridSize);
-    std::vector<core::Vec2i> kicks = core::GetWallKicks(kickType, state.rotation, newRotation);
+    const std::vector<core::Vec2i>& kicks = core::GetWallKicks(kickType, state.rotation, newRotation);
 
     for (const auto& kick : kicks) {
         core::Vec2i newPos = state.position + kick;

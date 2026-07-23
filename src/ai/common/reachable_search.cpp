@@ -101,7 +101,7 @@ std::vector<ReachablePlacement> SearchReachablePlacements(const core::Board& boa
         // キック候補を順番に試して最初に成立したものだけを採用する。
         for (int dir : {1, -1}) {
             int newRotation = ((current.rotation + dir) % 4 + 4) % 4;
-            std::vector<core::Vec2i> kicks = core::GetWallKicks(kickType, current.rotation, newRotation);
+            const std::vector<core::Vec2i>& kicks = core::GetWallKicks(kickType, current.rotation, newRotation);
             const std::vector<core::Vec2i>& newCells = mino.GetCells(newRotation);
 
             for (const auto& kick : kicks) {

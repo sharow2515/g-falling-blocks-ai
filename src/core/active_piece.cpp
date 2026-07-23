@@ -75,7 +75,7 @@ void ActivePiece::Rotate(Board& board, int direction) {
     std::vector<Vec2i> newCells = mino_->GetCells(newRotation);
 
     KickTableType type = SelectKickTable(mino_->name, mino_->gridSize);
-    std::vector<Vec2i> kicks = GetWallKicks(type, rotation_, newRotation);
+    const std::vector<Vec2i>& kicks = GetWallKicks(type, rotation_, newRotation);
 
     for (std::size_t i = 0; i < kicks.size(); ++i) {
         Vec2i newPos = position_ + kicks[i];

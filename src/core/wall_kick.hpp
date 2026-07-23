@@ -17,6 +17,6 @@ KickTableType SelectKickTable(const std::string& minoName, int gridSize);
 
 // fromRotation -> toRotation (どちらも0-3、隣接遷移のみ) のキックオフセット候補を、
 // 試す順番のまま返す。位置0は必ず(0,0)。
-std::vector<Vec2i> GetWallKicks(KickTableType type, int fromRotation, int toRotation);
+const std::vector<Vec2i>& GetWallKicks(KickTableType type, int fromRotation, int toRotation);
 
 }  // namespace fb::core
