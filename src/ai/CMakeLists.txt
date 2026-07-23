@@ -1,5 +1,6 @@
 add_library(ai STATIC
     common/board_features.cpp
+    common/occupancy_grid.cpp
     common/reachable_search.cpp
     common/move_execution.cpp
     common/path_conversion.cpp

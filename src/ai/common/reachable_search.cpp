@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <queue>
 
+#include "ai/common/occupancy_grid.hpp"
 #include "core/wall_kick.hpp"
 
 namespace fb::ai::common {
@@ -39,6 +40,9 @@ private:
 std::vector<ReachablePlacement> SearchReachablePlacements(const core::Board& board, const core::Mino& mino,
                                                             int spawnRotation, core::Vec2i spawnPosition) {
     std::vector<ReachablePlacement> results;
+
+    // 探索中はboardが変化しないため、占有状態を1回だけビットマスク化して使い回す。
+    OccupancyGrid grid(board);
 
     // 回転ごとのセル形状はMino::GetCells内でキャッシュされているため、
     // ここで改めて配列にコピーする必要はない。
@@ -87,13 +91,13 @@ std::vector<ReachablePlacement> SearchReachablePlacements(const core::Board& boa
         };
 
         // 左右下への移動
-        if (board.IsValidPosition(cells, pos + core::Vec2i::Left())) {
+        if (grid.IsValidPosition(cells, pos + core::Vec2i::Left())) {
             tryVisit(pos + core::Vec2i::Left(), current.rotation, MoveType::Left);
         }
-        if (board.IsValidPosition(cells, pos + core::Vec2i::Right())) {
+        if (grid.IsValidPosition(cells, pos + core::Vec2i::Right())) {
             tryVisit(pos + core::Vec2i::Right(), current.rotation, MoveType::Right);
         }
-        if (board.IsValidPosition(cells, pos + core::Vec2i::Down())) {
+        if (grid.IsValidPosition(cells, pos + core::Vec2i::Down())) {
             tryVisit(pos + core::Vec2i::Down(), current.rotation, MoveType::Down);
         }
 
@@ -106,7 +110,7 @@ std::vector<ReachablePlacement> SearchReachablePlacements(const core::Board& boa
 
             for (const auto& kick : kicks) {
                 core::Vec2i newPos = pos + kick;
-                if (board.IsValidPosition(newCells, newPos)) {
+                if (grid.IsValidPosition(newCells, newPos)) {
                     MoveType moveType = (dir == 1) ? MoveType::RotateCW : MoveType::RotateCCW;
                     tryVisit(newPos, newRotation, moveType);
                     break;
@@ -116,7 +120,7 @@ std::vector<ReachablePlacement> SearchReachablePlacements(const core::Board& boa
 
         // これ以上下に動けなければ「置ける場所」の候補として記録する
         // 探索は打ち切らない
-        if (!board.IsValidPosition(cells, pos + core::Vec2i::Down())) {
+        if (!grid.IsValidPosition(cells, pos + core::Vec2i::Down())) {
             ReachablePlacement placement;
             placement.rotation = current.rotation;
             placement.position = pos;
