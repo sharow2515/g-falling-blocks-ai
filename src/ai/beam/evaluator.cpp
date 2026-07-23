@@ -3,6 +3,7 @@
 #include <limits>
 
 #include "ai/common/board_features.hpp"
+#include "ai/common/occupancy_grid.hpp"
 
 namespace fb::ai::beam {
 
@@ -18,10 +19,12 @@ Features ComputeFeaturesFromClearedBoard(const core::Board& clearedBoard, const 
     Features f;
     f.landingHeight = common::ComputeLandingHeight(cells);
     f.erodedPieceCells = common::ComputeErodedPieceCells(cells, clearedRows);
-    f.holes = common::CountHoles(clearedBoard);
-    f.rowTransitions = common::CountRowTransitions(clearedBoard);
-    f.columnTransitions = common::CountColumnTransitions(clearedBoard);
-    f.cumulativeWells = common::CountCumulativeWells(clearedBoard);
+
+    common::OccupancyGrid grid(clearedBoard);
+    f.holes = common::CountHoles(grid);
+    f.rowTransitions = common::CountRowTransitions(grid);
+    f.columnTransitions = common::CountColumnTransitions(grid);
+    f.cumulativeWells = common::CountCumulativeWells(grid);
     f.causesGameOver = clearedBoard.IsGameOver();
     return f;
 }

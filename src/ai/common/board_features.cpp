@@ -25,12 +25,12 @@ double ComputeErodedPieceCells(const std::vector<core::Vec2i>& cells, const std:
     return static_cast<double>(clearedRows.size()) * static_cast<double>(erodedCellCount);
 }
 
-int CountHoles(const core::Board& board) {
+int CountHoles(const OccupancyGrid& grid) {
     int holes = 0;
-    for (int x = 0; x < board.Width(); ++x) {
+    for (int x = 0; x < grid.Width(); ++x) {
         bool seenFilled = false;
-        for (int y = board.Height() - 1; y >= 0; --y) {
-            bool occupied = board.CellColor({x, y}).has_value();
+        for (int y = grid.VisibleHeight() - 1; y >= 0; --y) {
+            bool occupied = grid.IsOccupied({x, y});
             if (occupied) {
                 seenFilled = true;
             } else if (seenFilled) {
@@ -41,12 +41,12 @@ int CountHoles(const core::Board& board) {
     return holes;
 }
 
-int CountRowTransitions(const core::Board& board) {
+int CountRowTransitions(const OccupancyGrid& grid) {
     int transitions = 0;
-    for (int y = 0; y < board.Height(); ++y) {
+    for (int y = 0; y < grid.VisibleHeight(); ++y) {
         bool prevFilled = true;  // 左の壁は「埋」扱い
-        for (int x = 0; x <= board.Width(); ++x) {
-            bool filled = (x == board.Width()) ? true : board.CellColor({x, y}).has_value();
+        for (int x = 0; x <= grid.Width(); ++x) {
+            bool filled = (x == grid.Width()) ? true : grid.IsOccupied({x, y});
             if (filled != prevFilled) ++transitions;
             prevFilled = filled;
         }
@@ -54,12 +54,12 @@ int CountRowTransitions(const core::Board& board) {
     return transitions;
 }
 
-int CountColumnTransitions(const core::Board& board) {
+int CountColumnTransitions(const OccupancyGrid& grid) {
     int transitions = 0;
-    for (int x = 0; x < board.Width(); ++x) {
+    for (int x = 0; x < grid.Width(); ++x) {
         bool prevFilled = true;  // 床は「埋」扱い
-        for (int y = 0; y < board.Height(); ++y) {
-            bool filled = board.CellColor({x, y}).has_value();
+        for (int y = 0; y < grid.VisibleHeight(); ++y) {
+            bool filled = grid.IsOccupied({x, y});
             if (filled != prevFilled) ++transitions;
             prevFilled = filled;
         }
@@ -68,14 +68,14 @@ int CountColumnTransitions(const core::Board& board) {
     return transitions;
 }
 
-int CountCumulativeWells(const core::Board& board) {
+int CountCumulativeWells(const OccupancyGrid& grid) {
     int cumulative = 0;
-    for (int x = 0; x < board.Width(); ++x) {
+    for (int x = 0; x < grid.Width(); ++x) {
         int depth = 0;
-        for (int y = board.Height() - 1; y >= 0; --y) {
-            bool filled = board.CellColor({x, y}).has_value();
-            bool leftFilled = (x == 0) ? true : board.CellColor({x - 1, y}).has_value();
-            bool rightFilled = (x == board.Width() - 1) ? true : board.CellColor({x + 1, y}).has_value();
+        for (int y = grid.VisibleHeight() - 1; y >= 0; --y) {
+            bool filled = grid.IsOccupied({x, y});
+            bool leftFilled = (x == 0) ? true : grid.IsOccupied({x - 1, y});
+            bool rightFilled = (x == grid.Width() - 1) ? true : grid.IsOccupied({x + 1, y});
 
             if (!filled && leftFilled && rightFilled) {
                 ++depth;
