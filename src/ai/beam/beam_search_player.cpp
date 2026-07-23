@@ -138,6 +138,12 @@ std::vector<ExpandTask> BuildExpandTasks(const std::vector<BeamNode>& beam,
     return tasks;
 }
 
+struct CandidateRef {
+    double score = 0.0;
+    int taskIdx = 0;
+    int resultIdx = 0;
+};
+
 }  // namespace
 
 BeamSearchPlayer::BeamSearchPlayer(int beamWidth, int searchDepth)
@@ -222,18 +228,33 @@ std::vector<PlayerMove> BeamSearchPlayer::BuildPlan(core::Game& game) {
                          perTaskResults[static_cast<std::size_t>(i)]);
         }
 
-        std::vector<BeamNode> nextBeam;
-        for (auto& result : perTaskResults) {
-            for (auto& child : result) nextBeam.push_back(std::move(child));
+        std::vector<CandidateRef> refs;
+        std::size_t totalCandidates = 0;
+        for (const auto& result : perTaskResults) totalCandidates += result.size();
+        refs.reserve(totalCandidates);
+        for (int i = 0; i < static_cast<int>(perTaskResults.size()); ++i) {
+            const auto& result = perTaskResults[static_cast<std::size_t>(i)];
+            for (int j = 0; j < static_cast<int>(result.size()); ++j) {
+                refs.push_back(CandidateRef{result[static_cast<std::size_t>(j)].score, i, j});
+            }
         }
 
-        if (nextBeam.empty()) break;  // どの候補からも置けなくなった(それ以上先は読めない)
+        if (refs.empty()) break;  // どの候補からも置けなくなった(それ以上先は読めない)
 
-        // 同点候補は先に見つかったものを優先するため安定ソートを使う
-        std::stable_sort(nextBeam.begin(), nextBeam.end(),
-                          [](const BeamNode& a, const BeamNode& b) { return a.score > b.score; });
-        if (nextBeam.size() > static_cast<std::size_t>(beamWidth_)) {
-            nextBeam.resize(beamWidth_);
+        // 上位beam-width件だけ分かればいいので、全件ソートせずpartial_sortで済ませる。
+        std::size_t keep = std::min(refs.size(), static_cast<std::size_t>(beamWidth_));
+        std::partial_sort(refs.begin(), refs.begin() + static_cast<std::ptrdiff_t>(keep), refs.end(),
+                           [](const CandidateRef& a, const CandidateRef& b) {
+                               if (a.score != b.score) return a.score > b.score;
+                               if (a.taskIdx != b.taskIdx) return a.taskIdx < b.taskIdx;
+                               return a.resultIdx < b.resultIdx;
+                           });
+        std::vector<BeamNode> nextBeam;
+        nextBeam.reserve(keep);
+        for (std::size_t k = 0; k < keep; ++k) {
+            const CandidateRef& ref = refs[k];
+            nextBeam.push_back(std::move(
+                perTaskResults[static_cast<std::size_t>(ref.taskIdx)][static_cast<std::size_t>(ref.resultIdx)]));
         }
         beam = std::move(nextBeam);
     }
