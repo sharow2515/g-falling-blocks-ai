@@ -3,6 +3,7 @@
 #include <limits>
 
 #include "ai/common/board_features.hpp"
+#include "ai/common/occupancy_grid.hpp"
 
 namespace fb::ai {
 
@@ -23,10 +24,12 @@ SimpleFeatures ComputeFeatures(core::Board board, const Placement& placement, co
     board.ClearFullLines(clearedRows);
 
     f.erodedPieceCells = common::ComputeErodedPieceCells(placement.cells, clearedRows);
-    f.holes = common::CountHoles(board);
-    f.rowTransitions = common::CountRowTransitions(board);
-    f.columnTransitions = common::CountColumnTransitions(board);
-    f.cumulativeWells = common::CountCumulativeWells(board);
+
+    common::OccupancyGrid grid(board);
+    f.holes = common::CountHoles(grid);
+    f.rowTransitions = common::CountRowTransitions(grid);
+    f.columnTransitions = common::CountColumnTransitions(grid);
+    f.cumulativeWells = common::CountCumulativeWells(grid);
     f.causesGameOver = board.IsGameOver();
 
     return f;

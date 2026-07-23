@@ -2,6 +2,7 @@
 
 #include <vector>
 
+#include "ai/common/occupancy_grid.hpp"
 #include "core/board.hpp"
 #include "core/mino.hpp"
 #include "core/types.hpp"
@@ -23,9 +24,13 @@ struct ReachablePlacement {
     std::vector<MoveType> path;
 };
 
-// board上でmino(spawnRotation, spawnPositionから開始)が、実際の移動・回転
+// grid上でmino(spawnRotation, spawnPositionから開始)が、実際の移動・回転
 // (ウォールキック含む)の組み合わせで到達しうる、これ以上下に動けない状態を
-// 全て列挙する(BFS)。
+// 全て列挙する(BFS)。呼び出し元が既にOccupancyGridを持っている場合はこちらを直接使うこと。
+std::vector<ReachablePlacement> SearchReachablePlacements(const OccupancyGrid& grid, const core::Mino& mino,
+                                                            int spawnRotation, core::Vec2i spawnPosition);
+
+// core::Boardから毎回OccupancyGridを作ってから上記に委譲するオーバーロード。
 std::vector<ReachablePlacement> SearchReachablePlacements(const core::Board& board, const core::Mino& mino,
                                                             int spawnRotation, core::Vec2i spawnPosition);
 

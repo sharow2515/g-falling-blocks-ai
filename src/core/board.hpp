@@ -16,7 +16,9 @@ public:
     int ExtraHeight() const { return extraHeight_; }
     int TotalHeight() const { return height_ + extraHeight_; }
 
-    [[nodiscard]] bool IsInsideBoard(Vec2i pos) const;
+    [[nodiscard]] bool IsInsideBoard(Vec2i pos) const {
+        return pos.x >= 0 && pos.x < width_ && pos.y >= 0 && pos.y < TotalHeight();
+    }
     [[nodiscard]] bool IsValidPosition(const std::vector<Vec2i>& cells, Vec2i position) const;
 
     void PlacePiece(const std::vector<Vec2i>& cells, Vec2i position, Color color);
@@ -35,8 +37,14 @@ public:
     // Tスピン判定用: 中心位置の4隅のブロック有無を調べる。埋まっているコーナー数(0-4)を返す。
     [[nodiscard]] int CountTSpinCorners(Vec2i centerPos) const;
 
-    [[nodiscard]] bool IsCellOccupied(Vec2i pos) const;
-    [[nodiscard]] std::optional<Color> CellColor(Vec2i pos) const;
+    [[nodiscard]] bool IsCellOccupied(Vec2i pos) const {
+        if (!IsInsideBoard(pos)) return true;  // 壁の外はブロックありとみなす
+        return grid_[Index(pos.x, pos.y)].has_value();
+    }
+    [[nodiscard]] std::optional<Color> CellColor(Vec2i pos) const {
+        if (!IsInsideBoard(pos)) return std::nullopt;
+        return grid_[Index(pos.x, pos.y)];
+    }
 
 private:
     [[nodiscard]] bool IsLineFull(int y) const;

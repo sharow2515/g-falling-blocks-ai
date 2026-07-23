@@ -9,10 +9,11 @@ if(NOT CMAKE_BUILD_TYPE)
 endif()
 
 if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
-    set(CMAKE_CXX_FLAGS_RELEASE "-O2 -DNDEBUG")
+    set(CMAKE_CXX_FLAGS_RELEASE "-O2 -DNDEBUG -mpopcnt")
 endif()
 
 find_package(SFML 3 COMPONENTS Graphics Window System REQUIRED)
+find_package(OpenMP REQUIRED)
 
 add_subdirectory(src/core)
 add_subdirectory(src/ai)

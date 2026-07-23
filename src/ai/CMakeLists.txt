@@ -1,5 +1,6 @@
 add_library(ai STATIC
     common/board_features.cpp
+    common/occupancy_grid.cpp
     common/reachable_search.cpp
     common/move_execution.cpp
     common/path_conversion.cpp
@@ -12,5 +13,5 @@ add_library(ai STATIC
     beam/beam_search_player.cpp
 )
 
-target_link_libraries(ai PUBLIC core)
+target_link_libraries(ai PUBLIC core OpenMP::OpenMP_CXX)
 target_include_directories(ai PUBLIC ${CMAKE_SOURCE_DIR}/src)

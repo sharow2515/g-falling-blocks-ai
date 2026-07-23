@@ -80,7 +80,7 @@ KickTableType SelectKickTable(const std::string& minoName, int gridSize) {
     return KickTableType::Standard;
 }
 
-std::vector<Vec2i> GetWallKicks(KickTableType type, int fromRotation, int toRotation) {
+const std::vector<Vec2i>& GetWallKicks(KickTableType type, int fromRotation, int toRotation) {
     int index = GetKickIndex(fromRotation, toRotation);
     switch (type) {
         case KickTableType::IPiece:
