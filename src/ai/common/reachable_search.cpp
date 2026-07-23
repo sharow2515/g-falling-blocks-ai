@@ -90,17 +90,6 @@ std::vector<ReachablePlacement> SearchReachablePlacements(const core::Board& boa
             pending.push(next);
         };
 
-        // 左右下への移動
-        if (grid.IsValidPosition(cells, pos + core::Vec2i::Left())) {
-            tryVisit(pos + core::Vec2i::Left(), current.rotation, MoveType::Left);
-        }
-        if (grid.IsValidPosition(cells, pos + core::Vec2i::Right())) {
-            tryVisit(pos + core::Vec2i::Right(), current.rotation, MoveType::Right);
-        }
-        if (grid.IsValidPosition(cells, pos + core::Vec2i::Down())) {
-            tryVisit(pos + core::Vec2i::Down(), current.rotation, MoveType::Down);
-        }
-
         // 回転(時計回り・反時計回り)。ActivePiece::Rotateと同じく、
         // キック候補を順番に試して最初に成立したものだけを採用する。
         for (int dir : {1, -1}) {
@@ -116,6 +105,17 @@ std::vector<ReachablePlacement> SearchReachablePlacements(const core::Board& boa
                     break;
                 }
             }
+        }
+
+        // 左右下への移動
+        if (grid.IsValidPosition(cells, pos + core::Vec2i::Left())) {
+            tryVisit(pos + core::Vec2i::Left(), current.rotation, MoveType::Left);
+        }
+        if (grid.IsValidPosition(cells, pos + core::Vec2i::Right())) {
+            tryVisit(pos + core::Vec2i::Right(), current.rotation, MoveType::Right);
+        }
+        if (grid.IsValidPosition(cells, pos + core::Vec2i::Down())) {
+            tryVisit(pos + core::Vec2i::Down(), current.rotation, MoveType::Down);
         }
 
         // これ以上下に動けなければ「置ける場所」の候補として記録する
