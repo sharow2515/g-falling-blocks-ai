@@ -8,10 +8,6 @@ Board::Board(int width, int height, int extraHeight)
       extraHeight_(extraHeight),
       grid_(static_cast<std::size_t>(width) * (height + extraHeight)) {}
 
-bool Board::IsInsideBoard(Vec2i pos) const {
-    return pos.x >= 0 && pos.x < width_ && pos.y >= 0 && pos.y < TotalHeight();
-}
-
 bool Board::IsValidPosition(const std::vector<Vec2i>& cells, Vec2i position) const {
     for (const auto& cell : cells) {
         Vec2i boardPos = position + cell;
@@ -117,16 +113,6 @@ int Board::CountTSpinCorners(Vec2i centerPos) const {
         if (IsCellOccupied(corner)) ++count;
     }
     return count;
-}
-
-bool Board::IsCellOccupied(Vec2i pos) const {
-    if (!IsInsideBoard(pos)) return true;  // 壁の外はブロックありとみなす
-    return grid_[Index(pos.x, pos.y)].has_value();
-}
-
-std::optional<Color> Board::CellColor(Vec2i pos) const {
-    if (!IsInsideBoard(pos)) return std::nullopt;
-    return grid_[Index(pos.x, pos.y)];
 }
 
 }  // namespace fb::core
