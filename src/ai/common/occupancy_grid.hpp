@@ -9,15 +9,22 @@
 
 namespace fb::ai::common {
 
-// core::Boardの占有状態を1回だけ読み取ってビットマスク化したスナップショット。
-// 探索中にboard.CellColor()/IsValidPosition()を何度も呼ぶ代わりに、これを使い回す。
-// 盤面は変化しない前提なので、関数ローカルでのみ使うこと(キャッシュ・保持はしない)。
+// core::Boardの占有状態をビットマスク化したもの。色は持たない(AIの評価に色は不要なため)。
+// 2通りの使い方がある:
+//   1. board.CellColor()を何度も呼ぶ代わりに使う、関数ローカルの読み取り専用スナップショット
+//      (探索中にboardは変化しない前提)。
+//   2. PlacePiece/ClearFullLinesで自ら状態を更新しながら、core::Boardを介さずに
+//      持ち回る軽量な盤面表現(ai::beamのBeamNodeなど)。
 //
-// ComputeFeatures等、候補配置ごとに毎回構築される呼ばれ方をするため、
+// ComputeFeatures等、候補配置ごとに毎回構築/コピーされる呼ばれ方をするため、
 // ヒープ確保を避けて固定長のスタック配列で持つ(盤面の高さは実行中変わらない)。
 class OccupancyGrid {
 public:
     static constexpr int kMaxRows = 64;
+
+    // 幅0・高さ0の空の状態。BeamNodeのデフォルト構築のためだけに存在し、
+    // 実際に使う前に必ずexplicit OccupancyGrid(const core::Board&)で作った値で上書きされる。
+    OccupancyGrid() = default;
 
     explicit OccupancyGrid(const core::Board& board);
 
@@ -38,16 +45,50 @@ public:
         return true;
     }
 
+    // cellsの示すセルを埋める(範囲外は無視。core::Board::PlacePieceと同じ意味論)。
+    void PlacePiece(const std::vector<core::Vec2i>& cells, core::Vec2i position) {
+        for (const auto& cell : cells) {
+            core::Vec2i pos = position + cell;
+            if (IsInsideBoard(pos)) {
+                rows_[static_cast<std::size_t>(pos.y)] |= (1u << pos.x);
+            }
+        }
+    }
+
+    // 揃った行(全列埋まっている行)を消去し、消去前の行番号をclearedRowsに積む(下から順)。
+    // 消去数を返す。core::Board::ClearFullLinesと同じ意味論。
+    int ClearFullLines(std::vector<int>& clearedRows) {
+        clearedRows.clear();
+        const std::uint32_t fullMask = (width_ >= 32) ? 0xFFFFFFFFu : ((1u << width_) - 1u);
+
+        for (int y = 0; y < height_; ++y) {
+            if (rows_[static_cast<std::size_t>(y)] == fullMask) clearedRows.push_back(y);
+        }
+
+        const int linesCleared = static_cast<int>(clearedRows.size());
+        for (std::size_t i = 0; i < clearedRows.size(); ++i) {
+            int y = clearedRows[i] - static_cast<int>(i);
+            for (int shiftY = y; shiftY < height_ - 1; ++shiftY) {
+                rows_[static_cast<std::size_t>(shiftY)] = rows_[static_cast<std::size_t>(shiftY + 1)];
+            }
+            rows_[static_cast<std::size_t>(height_ - 1)] = 0;
+        }
+        return linesCleared;
+    }
+
+    // core::Board::IsGameOverと同じ意味論(見えている範囲のすぐ上の行に何かあるか)。
+    [[nodiscard]] bool IsGameOver() const { return rows_[static_cast<std::size_t>(visibleHeight_)] != 0; }
+
     [[nodiscard]] int Width() const { return width_; }
     // extraHeight分のバッファ域を含む全高(BFSの範囲判定用)。
-    [[nodiscard]] int Height() const { return height_; }
-    // 見えている範囲だけの高さ(特徴量計算のスキャン範囲用)。
+    [[nodiscard]] int TotalHeight() const { return height_; }
+    // 見えている範囲だけの高さ(特徴量計算のスキャン範囲・スポーン位置計算用)。
     [[nodiscard]] int VisibleHeight() const { return visibleHeight_; }
 
 private:
-    int width_;
-    int height_;
-    int visibleHeight_;
+    int width_ = 0;
+    int height_ = 0;
+    int visibleHeight_ = 0;
     std::array<std::uint32_t, kMaxRows> rows_{};  // 1行1ワード。bit x = 列x。行インデックス = y。
 };
 

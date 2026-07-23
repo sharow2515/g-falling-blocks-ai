@@ -2,7 +2,7 @@
 
 #include <vector>
 
-#include "core/board.hpp"
+#include "ai/common/occupancy_grid.hpp"
 #include "core/types.hpp"
 
 namespace fb::ai::beam {
@@ -28,7 +28,7 @@ double Evaluate(const Features& features);
 
 // 既にcellsを配置してライン消去まで済ませたclearedBoardから特徴量を計算する。
 // cellsは配置時のワールド座標(消去前)、clearedRowsはそのときの消去行番号のリスト。
-Features ComputeFeaturesFromClearedBoard(const core::Board& clearedBoard, const std::vector<core::Vec2i>& cells,
-                                          const std::vector<int>& clearedRows);
+Features ComputeFeaturesFromClearedBoard(const common::OccupancyGrid& clearedBoard,
+                                          const std::vector<core::Vec2i>& cells, const std::vector<int>& clearedRows);
 
 }  // namespace fb::ai::beam

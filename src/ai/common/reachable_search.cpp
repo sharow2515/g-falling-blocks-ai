@@ -18,9 +18,9 @@ struct State {
 
 class StateSpace {
 public:
-    StateSpace(const core::Board& board, int gridSize)
-        : width_(board.Width() + 2 * gridSize),
-          height_(board.TotalHeight() + 2 * gridSize),
+    StateSpace(int boardWidth, int boardTotalHeight, int gridSize)
+        : width_(boardWidth + 2 * gridSize),
+          height_(boardTotalHeight + 2 * gridSize),
           offsetX_(gridSize),
           offsetY_(gridSize) {}
 
@@ -39,16 +39,20 @@ private:
 
 std::vector<ReachablePlacement> SearchReachablePlacements(const core::Board& board, const core::Mino& mino,
                                                             int spawnRotation, core::Vec2i spawnPosition) {
-    std::vector<ReachablePlacement> results;
-
     // 探索中はboardが変化しないため、占有状態を1回だけビットマスク化して使い回す。
     OccupancyGrid grid(board);
+    return SearchReachablePlacements(grid, mino, spawnRotation, spawnPosition);
+}
+
+std::vector<ReachablePlacement> SearchReachablePlacements(const OccupancyGrid& grid, const core::Mino& mino,
+                                                            int spawnRotation, core::Vec2i spawnPosition) {
+    std::vector<ReachablePlacement> results;
 
     // 回転ごとのセル形状はMino::GetCells内でキャッシュされているため、
     // ここで改めて配列にコピーする必要はない。
     core::KickTableType kickType = core::SelectKickTable(mino.name, mino.gridSize);
 
-    StateSpace space(board, mino.gridSize);
+    StateSpace space(grid.Width(), grid.TotalHeight(), mino.gridSize);
     std::vector<bool> visited(static_cast<std::size_t>(space.Size()), false);
     std::vector<int> parent(static_cast<std::size_t>(space.Size()), -1);
     std::vector<MoveType> moveFromParent(static_cast<std::size_t>(space.Size()));

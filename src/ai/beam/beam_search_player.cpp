@@ -6,6 +6,7 @@
 
 #include "ai/beam/evaluator.hpp"
 #include "ai/common/move_execution.hpp"
+#include "ai/common/occupancy_grid.hpp"
 #include "ai/common/path_conversion.hpp"
 #include "ai/common/reachable_search.hpp"
 
@@ -22,7 +23,7 @@ struct SpawnState {
 // まだ実際にはスポーンしていない未来のピースについて、「もしこの盤面に今出現したら
 // どこから始まるか」を計算するためのもの。core::ActivePiece自体には手を入れず、
 // この用途専用にここでだけ複製している。
-std::optional<SpawnState> ComputeSpawnState(const core::Board& board, const core::Mino& mino) {
+std::optional<SpawnState> ComputeSpawnState(const common::OccupancyGrid& board, const core::Mino& mino) {
     const std::vector<core::Vec2i>& cells = mino.GetCells(0);
 
     int maxCellY = std::numeric_limits<int>::min();
@@ -31,7 +32,7 @@ std::optional<SpawnState> ComputeSpawnState(const core::Board& board, const core
     }
 
     int spawnX = board.Width() / 2 - mino.gridSize / 2;
-    int spawnY = board.Height() - maxCellY - 1;
+    int spawnY = board.VisibleHeight() - maxCellY - 1;
     core::Vec2i pos{spawnX, spawnY};
 
     if (!board.IsValidPosition(cells, pos)) {
@@ -51,7 +52,7 @@ std::optional<SpawnState> ComputeSpawnState(const core::Board& board, const core
 // Holdにより、ノードごとに「sequence中どこまで消費し終えたか(seqIndex)」が
 // 異なりうる(初回Holdは1手で2個消費するため)。
 struct BeamNode {
-    core::Board board;
+    common::OccupancyGrid board;
     double score = 0.0;
     std::vector<PlayerMove> firstMove;  // 探索起点(現在のピース)に対する操作列。空 = まだ未決定。
     const core::Mino* holdMino = nullptr;
@@ -70,8 +71,8 @@ void ExpandOption(const BeamNode& node, const core::Mino& pieceToPlace, bool use
         common::SearchReachablePlacements(node.board, pieceToPlace, spawn->rotation, spawn->position);
 
     for (const auto& placement : placements) {
-        core::Board newBoard = node.board;
-        newBoard.PlacePiece(placement.cells, core::Vec2i{0, 0}, pieceToPlace.color);
+        common::OccupancyGrid newBoard = node.board;
+        newBoard.PlacePiece(placement.cells, core::Vec2i{0, 0});
         std::vector<int> clearedRows;
         newBoard.ClearFullLines(clearedRows);
 
@@ -187,7 +188,7 @@ std::vector<PlayerMove> BeamSearchPlayer::BuildPlan(core::Game& game) {
 
     std::vector<BeamNode> beam;
     BeamNode root;
-    root.board = game.GetBoard();
+    root.board = common::OccupancyGrid(game.GetBoard());
     root.holdMino = game.GetHoldMino();
     root.seqIndex = 0;
 
