@@ -4,10 +4,13 @@
 #include <fstream>
 #include <iostream>
 #include <memory>
+#include <sstream>
+#include <stdexcept>
 #include <string>
 #include <vector>
 
 #include "ai/beam/beam_search_player.hpp"
+#include "ai/beam/evaluator.hpp"
 #include "ai/player.hpp"
 #include "ai/reachability/reachability_player.hpp"
 #include "ai/simple/simple_player.hpp"
@@ -25,7 +28,31 @@ struct Options {
     int beamWidth = 20;
     int beamDepth = 2;
     std::string outputCsvPath;  // 空文字ならCSV出力しない
+    fb::ai::beam::Weights weights;  // --ai beam のときのみ使用。デフォルトはWeights{}
 };
+
+// "landingHeight,erodedPieceCells,rowTransitions,columnTransitions,holes,cumulativeWells" の順で
+// カンマ区切り6個のdoubleをパースする。
+fb::ai::beam::Weights ParseWeights(const std::string& arg) {
+    std::vector<double> values;
+    std::stringstream ss(arg);
+    std::string token;
+    while (std::getline(ss, token, ',')) {
+        values.push_back(std::stod(token));
+    }
+    if (values.size() != 6) {
+        throw std::invalid_argument("--weightsは6個のカンマ区切り数値である必要があります: " + arg);
+    }
+
+    fb::ai::beam::Weights weights;
+    weights.landingHeight = values[0];
+    weights.erodedPieceCells = values[1];
+    weights.rowTransitions = values[2];
+    weights.columnTransitions = values[3];
+    weights.holes = values[4];
+    weights.cumulativeWells = values[5];
+    return weights;
+}
 
 Options ParseOptions(int argc, char** argv) {
     Options opts;
@@ -49,6 +76,8 @@ Options ParseOptions(int argc, char** argv) {
             opts.minosJsonPath = "assets/minos_hard.json";
         } else if (arg == "--output" && i + 1 < argc) {
             opts.outputCsvPath = argv[++i];
+        } else if (arg == "--weights" && i + 1 < argc) {
+            opts.weights = ParseWeights(argv[++i]);
         }
     }
     return opts;
@@ -57,7 +86,7 @@ Options ParseOptions(int argc, char** argv) {
 std::unique_ptr<fb::ai::AiPlayer> MakePlayer(const Options& opts) {
     if (opts.aiName == "reachability") return std::make_unique<fb::ai::reachability::ReachabilityPlayer>();
     if (opts.aiName == "beam") {
-        return std::make_unique<fb::ai::beam::BeamSearchPlayer>(opts.beamWidth, opts.beamDepth);
+        return std::make_unique<fb::ai::beam::BeamSearchPlayer>(opts.beamWidth, opts.beamDepth, opts.weights);
     }
     return std::make_unique<fb::ai::SimplePlayer>();
 }
@@ -65,7 +94,13 @@ std::unique_ptr<fb::ai::AiPlayer> MakePlayer(const Options& opts) {
 }  // namespace
 
 int main(int argc, char** argv) {
-    Options opts = ParseOptions(argc, argv);
+    Options opts;
+    try {
+        opts = ParseOptions(argc, argv);
+    } catch (const std::exception& e) {
+        std::cerr << "オプションが不正です: " << e.what() << "\n";
+        return 1;
+    }
 
     std::vector<fb::core::Mino> minos;
     try {

@@ -1,0 +1,103 @@
+# /// script
+# dependencies = [
+#     "cma",
+# ]
+# ///
+"""CMA-ESでbeam AIの評価重み(Weights)を最適化する。
+
+使い方: uv run scripts/tune_weights.py
+"""
+
+import argparse
+import subprocess
+import sys
+
+import cma
+
+# Weights構造体のフィールド順: landingHeight, erodedPieceCells, rowTransitions,
+# columnTransitions, holes, cumulativeWells
+WEIGHT_NAMES = [
+    "landingHeight",
+    "erodedPieceCells",
+    "rowTransitions",
+    "columnTransitions",
+    "holes",
+    "cumulativeWells",
+]
+DEFAULT_WEIGHTS = [-1.0, 1.0, -1.0, -1.0, -4.0, -1.0]
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--benchmark-path", default="./build/Benchmark")
+    parser.add_argument("--games", type=int, default=3, help="1回の評価あたりのゲーム数(学習用)")
+    parser.add_argument("--seed-start", type=int, default=1, help="学習用seedの開始値")
+    parser.add_argument("--beam-width", type=int, default=20)
+    parser.add_argument("--beam-depth", type=int, default=2)
+    parser.add_argument("--sigma0", type=float, default=1.0, help="CMA-ESの初期ステップ幅")
+    parser.add_argument("--max-generations", type=int, default=2)
+    parser.add_argument("--log", default="tune_weights_log.csv")
+    return parser.parse_args()
+
+
+def average_score(args: argparse.Namespace, weights: list) -> float:
+    weights_arg = ",".join(str(w) for w in weights)
+    result = subprocess.run(
+        [
+            args.benchmark_path,
+            "--ai", "beam",
+            "--beam-width", str(args.beam_width),
+            "--beam-depth", str(args.beam_depth),
+            "--games", str(args.games),
+            "--seed-start", str(args.seed_start),
+            "--weights", weights_arg,
+        ],
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    for line in result.stdout.splitlines():
+        if line.startswith("average score:"):
+            return float(line.split(":", 1)[1])
+    raise RuntimeError(f"average scoreが出力に見つかりません: {result.stdout}")
+
+
+def main() -> None:
+    args = parse_args()
+
+    es = cma.CMAEvolutionStrategy(
+        DEFAULT_WEIGHTS,
+        args.sigma0,
+        {"bounds": [-10, 10], "maxiter": args.max_generations},
+    )
+
+    generation = 0
+    with open(args.log, "w") as log:
+        log.write("generation,fitness_best,fitness_mean," + ",".join(WEIGHT_NAMES) + "\n")
+
+        try:
+            while not es.stop():
+                candidates = es.ask()
+                scores = [average_score(args, c) for c in candidates]
+                fitnesses = [-s for s in scores]  # cmaは最小化するため符号反転
+                es.tell(candidates, fitnesses)
+                es.disp()
+
+                best_score = max(scores)
+                mean_score = sum(scores) / len(scores)
+                log.write(
+                    f"{generation},{best_score},{mean_score},"
+                    + ",".join(str(w) for w in es.result.xbest)
+                    + "\n"
+                )
+                log.flush()
+                generation += 1
+        except KeyboardInterrupt:
+            print("中断されました。ここまでの最良結果を報告します。", file=sys.stderr)
+
+    print("best weights:", dict(zip(WEIGHT_NAMES, es.result.xbest)))
+    print("best average score:", -es.result.fbest)
+
+
+if __name__ == "__main__":
+    main()

@@ -54,8 +54,18 @@ Aiの動きを可視化するモード
 ./build/Benchmark --max-lines 1000             # 1ゲームあたりの消去ライン上限を変更
 ./build/Benchmark --ai reachability            # 使用するAIを切り替える
 ./build/Benchmark --output result.csv          # ゲームごとの結果(seed,score,lines,hit_line_limit)をCSVに出力
+./build/Benchmark --ai beam --weights "-1,1,-1,-1,-4,-1"  # beamの評価重みを変更(landingHeight,erodedPieceCells,rowTransitions,columnTransitions,holes,cumulativeWellsの順)
 ```
 
 ```bash
 uv run scripts/plot_benchmark.py result.csv    # result.csv.{score_hist,lines_hist,lines_vs_score}.png を生成
 ```
+
+`beam`の評価重み(Weights)は、CMA-ESで最適化できる。
+
+```bash
+uv run scripts/tune_weights.py    # デフォルトは動作確認用の小さい設定(すぐ終わる)
+uv run scripts/tune_weights.py --games 30 --beam-width 50 --beam-depth 5 --max-generations 40  # 本番設定
+```
+
+世代ごとの結果は`tune_weights_log.csv`に記録される。

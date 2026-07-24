@@ -21,10 +21,18 @@ struct Features {
     bool causesGameOver = false;
 };
 
-// 重み付き線形和。landingHeight=-1, erodedPieceCells=+1, rowTransitions=-1,
-// columnTransitions=-1, holes=-4, cumulativeWells=-1
+struct Weights {
+    double landingHeight = -1.0;
+    double erodedPieceCells = 1.0;
+    double rowTransitions = -1.0;
+    double columnTransitions = -1.0;
+    double holes = -4.0;
+    double cumulativeWells = -1.0;
+};
+
+// featuresとweightsの重み付き線形和。
 // ただしcausesGameOverがtrueなら、他の選択肢がある限り絶対に選ばれないよう-infinityを返す。
-double Evaluate(const Features& features);
+double Evaluate(const Features& features, const Weights& weights = Weights{});
 
 // 既にcellsを配置してライン消去まで済ませたclearedBoardから特徴量を計算する。
 // cellsは配置時のワールド座標(消去前)、clearedRowsはそのときの消去行番号のリスト。
