@@ -55,3 +55,7 @@ Aiの動きを可視化するモード
 ./build/Benchmark --ai reachability            # 使用するAIを切り替える
 ./build/Benchmark --output result.csv          # ゲームごとの結果(seed,score,lines,hit_line_limit)をCSVに出力
 ```
+
+```bash
+uv run scripts/plot_benchmark.py result.csv    # result.csv.{score_hist,lines_hist,lines_vs_score}.png を生成
+```
