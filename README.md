@@ -13,7 +13,7 @@
 
 ```bash
 sudo apt-get update
-sudo apt-get install libx11-dev libxrandr-dev libxcursor-dev libxi-dev libudev-dev libgl1-mesa-dev
+sudo apt-get install libx11-dev libxrandr-dev libxcursor-dev libxi-dev libudev-dev libgl1-mesa-dev pkg-config
 ```
 
 ## ビルドと実行
