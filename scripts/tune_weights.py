@@ -73,7 +73,11 @@ def main() -> None:
 
     generation = 0
     with open(args.log, "w") as log:
-        log.write("generation,fitness_best,fitness_mean," + ",".join(WEIGHT_NAMES) + "\n")
+        log.write(
+            "generation,gen_best_score,gen_mean_score,overall_best_score,"
+            + ",".join(WEIGHT_NAMES)
+            + "\n"
+        )
 
         try:
             while not es.stop():
@@ -83,10 +87,13 @@ def main() -> None:
                 es.tell(candidates, fitnesses)
                 es.disp()
 
-                best_score = max(scores)
-                mean_score = sum(scores) / len(scores)
+                # overall_best_scoreとその後の重み列は常にes.result.xbestの組(=同じ解)を指すため、
+                # overall_best_scoreは世代を追うごとに単調増加(悪化しない)になる。
+                gen_best_score = max(scores)
+                gen_mean_score = sum(scores) / len(scores)
+                overall_best_score = -es.result.fbest
                 log.write(
-                    f"{generation},{best_score},{mean_score},"
+                    f"{generation},{gen_best_score},{gen_mean_score},{overall_best_score},"
                     + ",".join(str(w) for w in es.result.xbest)
                     + "\n"
                 )
