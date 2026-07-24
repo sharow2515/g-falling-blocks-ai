@@ -1,6 +1,7 @@
 #include <cmath>
 #include <cstdint>
 #include <cstdlib>
+#include <fstream>
 #include <iostream>
 #include <memory>
 #include <string>
@@ -23,6 +24,7 @@ struct Options {
     std::string aiName = "simple";  // "simple" | "reachability" | "beam"
     int beamWidth = 20;
     int beamDepth = 2;
+    std::string outputCsvPath;  // 空文字ならCSV出力しない
 };
 
 Options ParseOptions(int argc, char** argv) {
@@ -45,6 +47,8 @@ Options ParseOptions(int argc, char** argv) {
             opts.minosJsonPath = "assets/minos_easy.json";
         } else if (arg == "--hard") {
             opts.minosJsonPath = "assets/minos_hard.json";
+        } else if (arg == "--output" && i + 1 < argc) {
+            opts.outputCsvPath = argv[++i];
         }
     }
     return opts;
@@ -79,6 +83,16 @@ int main(int argc, char** argv) {
         return 1;
     }
 
+    std::ofstream csv;
+    if (!opts.outputCsvPath.empty()) {
+        csv.open(opts.outputCsvPath, std::ios::out | std::ios::trunc);
+        if (!csv) {
+            std::cerr << "出力ファイルを開けませんでした: " << opts.outputCsvPath << "\n";
+            return 1;
+        }
+        csv << "seed,score,lines,hit_line_limit\n";
+    }
+
     double scoreSum = 0.0;
     double linesSum = 0.0;
     int bestScore = 0;
@@ -94,6 +108,12 @@ int main(int argc, char** argv) {
         if (result.score > bestScore) bestScore = result.score;
         if (worstScore < 0 || result.score < worstScore) worstScore = result.score;
         if (result.hitLineLimit) ++lineLimitHits;
+
+        if (csv.is_open()) {
+            csv << seed << "," << result.score << "," << result.totalLines << "," << (result.hitLineLimit ? 1 : 0)
+                << "\n";
+            csv.flush();
+        }
     }
 
     double avgScore = opts.games > 0 ? scoreSum / opts.games : 0.0;

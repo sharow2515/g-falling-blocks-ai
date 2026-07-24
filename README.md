@@ -13,7 +13,7 @@
 
 ```bash
 sudo apt-get update
-sudo apt-get install libx11-dev libxrandr-dev libxcursor-dev libxi-dev libudev-dev libgl1-mesa-dev
+sudo apt-get install libx11-dev libxrandr-dev libxcursor-dev libxi-dev libudev-dev libgl1-mesa-dev pkg-config
 ```
 
 ## ビルドと実行
@@ -53,4 +53,9 @@ Aiの動きを可視化するモード
 ./build/Benchmark --hard                       # ブロック20種類で実行(デフォルト)
 ./build/Benchmark --max-lines 1000             # 1ゲームあたりの消去ライン上限を変更
 ./build/Benchmark --ai reachability            # 使用するAIを切り替える
+./build/Benchmark --output result.csv          # ゲームごとの結果(seed,score,lines,hit_line_limit)をCSVに出力
+```
+
+```bash
+uv run scripts/plot_benchmark.py result.csv    # result.csv.{score_hist,lines_hist,lines_vs_score}.png を生成
 ```
