@@ -11,6 +11,8 @@ add_library(ai STATIC
     reachability/reachability_player.cpp
     beam/evaluator.cpp
     beam/beam_search_player.cpp
+    beam2/evaluator.cpp
+    beam2/beam_search_player.cpp
 )
 
 target_link_libraries(ai PUBLIC core OpenMP::OpenMP_CXX)

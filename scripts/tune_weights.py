@@ -3,9 +3,9 @@
 #     "cma",
 # ]
 # ///
-"""CMA-ESでbeam AIの評価重み(Weights)を最適化する。
+"""CMA-ESでbeam/beam2 AIの評価重み(Weights)を最適化する。
 
-使い方: uv run scripts/tune_weights.py
+使い方: uv run scripts/tune_weights.py --ai beam2
 """
 
 import argparse
@@ -14,21 +14,23 @@ import sys
 
 import cma
 
-# Weights構造体のフィールド順: landingHeight, erodedPieceCells, rowTransitions,
-# columnTransitions, holes, cumulativeWells
-WEIGHT_NAMES = [
-    "landingHeight",
-    "erodedPieceCells",
-    "rowTransitions",
-    "columnTransitions",
-    "holes",
-    "cumulativeWells",
-]
-DEFAULT_WEIGHTS = [-1.0, 1.0, -1.0, -1.0, -4.0, -1.0]
+# 各AIのWeights構造体のフィールド順。beam2はbeamにbumpinessを追加したもの。
+WEIGHT_NAMES_BY_AI = {
+    "beam": ["landingHeight", "erodedPieceCells", "rowTransitions", "columnTransitions", "holes", "cumulativeWells"],
+    "beam2": [
+        "landingHeight", "erodedPieceCells", "rowTransitions", "columnTransitions", "holes", "cumulativeWells",
+        "bumpiness",
+    ],
+}
+DEFAULT_WEIGHTS_BY_AI = {
+    "beam": [-1.0, 1.0, -1.0, -1.0, -4.0, -1.0],
+    "beam2": [-1.0, 1.0, -1.0, -1.0, -4.0, -1.0, 0.0],
+}
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--ai", choices=WEIGHT_NAMES_BY_AI.keys(), default="beam")
     parser.add_argument("--benchmark-path", default="./build/Benchmark")
     parser.add_argument("--games", type=int, default=3, help="1回の評価あたりのゲーム数(学習用)")
     parser.add_argument("--seed-start", type=int, default=1, help="学習用seedの開始値")
@@ -45,7 +47,7 @@ def average_score(args: argparse.Namespace, weights: list) -> float:
     result = subprocess.run(
         [
             args.benchmark_path,
-            "--ai", "beam",
+            "--ai", args.ai,
             "--beam-width", str(args.beam_width),
             "--beam-depth", str(args.beam_depth),
             "--games", str(args.games),
@@ -64,9 +66,11 @@ def average_score(args: argparse.Namespace, weights: list) -> float:
 
 def main() -> None:
     args = parse_args()
+    weight_names = WEIGHT_NAMES_BY_AI[args.ai]
+    default_weights = DEFAULT_WEIGHTS_BY_AI[args.ai]
 
     es = cma.CMAEvolutionStrategy(
-        DEFAULT_WEIGHTS,
+        default_weights,
         args.sigma0,
         {"bounds": [-10, 10], "maxiter": args.max_generations},
     )
@@ -75,7 +79,7 @@ def main() -> None:
     with open(args.log, "w") as log:
         log.write(
             "generation,gen_best_score,gen_mean_score,overall_best_score,"
-            + ",".join(WEIGHT_NAMES)
+            + ",".join(weight_names)
             + "\n"
         )
 
@@ -102,7 +106,7 @@ def main() -> None:
         except KeyboardInterrupt:
             print("中断されました。ここまでの最良結果を報告します。", file=sys.stderr)
 
-    print("best weights:", dict(zip(WEIGHT_NAMES, es.result.xbest)))
+    print("best weights:", dict(zip(weight_names, es.result.xbest)))
     print("best average score:", -es.result.fbest)
 
 
