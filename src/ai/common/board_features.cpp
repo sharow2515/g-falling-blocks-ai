@@ -77,25 +77,38 @@ int CountColumnTransitions(const OccupancyGrid& grid) {
     return transitions;
 }
 
+namespace {
+// 列xの高さ = 最上段の埋まっているビット位置+1(空列は0)。CountHolesと同じ考え方。
+int ColumnHeight(const OccupancyGrid& grid, std::uint32_t visibleMask, int x) {
+    std::uint32_t col = grid.ColBits(x) & visibleMask;
+    if (col == 0) return 0;
+    return 32 - __builtin_clz(col);
+}
+}  // namespace
+
 int ComputeBumpiness(const OccupancyGrid& grid) {
     const int width = grid.Width();
     const std::uint32_t visibleMask = (1u << grid.VisibleHeight()) - 1u;
 
-    // 列xの高さ = 最上段の埋まっているビット位置+1(空列は0)。CountHolesと同じ考え方。
-    auto columnHeight = [&](int x) {
-        std::uint32_t col = grid.ColBits(x) & visibleMask;
-        if (col == 0) return 0;
-        return 32 - __builtin_clz(col);
-    };
-
     int bumpiness = 0;
-    int prevHeight = columnHeight(0);
+    int prevHeight = ColumnHeight(grid, visibleMask, 0);
     for (int x = 1; x < width; ++x) {
-        int height = columnHeight(x);
+        int height = ColumnHeight(grid, visibleMask, x);
         bumpiness += std::abs(height - prevHeight);
         prevHeight = height;
     }
     return bumpiness;
+}
+
+int ComputeAggregateHeight(const OccupancyGrid& grid) {
+    const int width = grid.Width();
+    const std::uint32_t visibleMask = (1u << grid.VisibleHeight()) - 1u;
+
+    int total = 0;
+    for (int x = 0; x < width; ++x) {
+        total += ColumnHeight(grid, visibleMask, x);
+    }
+    return total;
 }
 
 int CountCumulativeWells(const OccupancyGrid& grid) {

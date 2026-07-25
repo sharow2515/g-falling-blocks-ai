@@ -14,17 +14,17 @@ import sys
 
 import cma
 
-# 各AIのWeights構造体のフィールド順。beam2はbeamにbumpinessを追加したもの。
+# 各AIのWeights構造体のフィールド順。beam2はbeamにbumpiness/aggregateHeightを追加したもの。
 WEIGHT_NAMES_BY_AI = {
     "beam": ["landingHeight", "erodedPieceCells", "rowTransitions", "columnTransitions", "holes", "cumulativeWells"],
     "beam2": [
         "landingHeight", "erodedPieceCells", "rowTransitions", "columnTransitions", "holes", "cumulativeWells",
-        "bumpiness",
+        "bumpiness", "aggregateHeight",
     ],
 }
 DEFAULT_WEIGHTS_BY_AI = {
     "beam": [-1.0, 1.0, -1.0, -1.0, -4.0, -1.0],
-    "beam2": [-1.0, 1.0, -1.0, -1.0, -4.0, -1.0, 0.0],
+    "beam2": [-1.0, 1.0, -1.0, -1.0, -4.0, -1.0, 0.0, 0.0],
 }
 
 
@@ -39,6 +39,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--sigma0", type=float, default=1.0, help="CMA-ESの初期ステップ幅")
     parser.add_argument("--max-generations", type=int, default=2)
     parser.add_argument("--log", default="tune_weights_log.csv")
+    parser.add_argument(
+        "--x0",
+        default=None,
+        help="初期値をカンマ区切りで指定してウォームスタートする(次元数はWeightsと同じ)。未指定ならデフォルト重み",
+    )
     return parser.parse_args()
 
 
@@ -67,10 +72,16 @@ def average_score(args: argparse.Namespace, weights: list) -> float:
 def main() -> None:
     args = parse_args()
     weight_names = WEIGHT_NAMES_BY_AI[args.ai]
-    default_weights = DEFAULT_WEIGHTS_BY_AI[args.ai]
+
+    if args.x0 is not None:
+        x0 = [float(v) for v in args.x0.split(",")]
+        if len(x0) != len(weight_names):
+            raise ValueError(f"--x0は{len(weight_names)}個のカンマ区切り数値である必要があります: {args.x0}")
+    else:
+        x0 = DEFAULT_WEIGHTS_BY_AI[args.ai]
 
     es = cma.CMAEvolutionStrategy(
-        default_weights,
+        x0,
         args.sigma0,
         {"bounds": [-10, 10], "maxiter": args.max_generations},
     )

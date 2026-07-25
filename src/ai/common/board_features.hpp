@@ -29,4 +29,7 @@ int CountCumulativeWells(const OccupancyGrid& grid);
 // 隣接する列の高さ(最上段の埋まっているセルの位置+1、空列は0)の差の絶対値の総和。
 int ComputeBumpiness(const OccupancyGrid& grid);
 
+// 各列の高さ(最上段の埋まっているセルの位置+1、空列は0)の総和。
+int ComputeAggregateHeight(const OccupancyGrid& grid);
+
 }  // namespace fb::ai::common

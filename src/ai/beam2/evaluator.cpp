@@ -14,7 +14,8 @@ double Evaluate(const Features& f, const Weights& w) {
 
     return w.landingHeight * f.landingHeight + w.erodedPieceCells * f.erodedPieceCells +
            w.rowTransitions * f.rowTransitions + w.columnTransitions * f.columnTransitions +
-           w.holes * f.holes + w.cumulativeWells * f.cumulativeWells + w.bumpiness * f.bumpiness;
+           w.holes * f.holes + w.cumulativeWells * f.cumulativeWells + w.bumpiness * f.bumpiness +
+           w.aggregateHeight * f.aggregateHeight;
 }
 
 Weights ParseWeights(const std::string& arg) {
@@ -24,8 +25,8 @@ Weights ParseWeights(const std::string& arg) {
     while (std::getline(ss, token, ',')) {
         values.push_back(std::stod(token));
     }
-    if (values.size() != 7) {
-        throw std::invalid_argument("--weightsは7個のカンマ区切り数値である必要があります: " + arg);
+    if (values.size() != 8) {
+        throw std::invalid_argument("--weightsは8個のカンマ区切り数値である必要があります: " + arg);
     }
 
     Weights weights;
@@ -36,6 +37,7 @@ Weights ParseWeights(const std::string& arg) {
     weights.holes = values[4];
     weights.cumulativeWells = values[5];
     weights.bumpiness = values[6];
+    weights.aggregateHeight = values[7];
     return weights;
 }
 
@@ -51,6 +53,7 @@ Features ComputeFeaturesFromClearedBoard(const common::OccupancyGrid& clearedBoa
     f.columnTransitions = common::CountColumnTransitions(clearedBoard);
     f.cumulativeWells = common::CountCumulativeWells(clearedBoard);
     f.bumpiness = common::ComputeBumpiness(clearedBoard);
+    f.aggregateHeight = common::ComputeAggregateHeight(clearedBoard);
     f.causesGameOver = clearedBoard.IsGameOver();
     return f;
 }
