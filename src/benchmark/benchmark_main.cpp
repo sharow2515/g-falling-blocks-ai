@@ -4,7 +4,6 @@
 #include <fstream>
 #include <iostream>
 #include <memory>
-#include <sstream>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -31,29 +30,6 @@ struct Options {
     fb::ai::beam::Weights weights;  // --ai beam のときのみ使用。デフォルトはWeights{}
 };
 
-// "landingHeight,erodedPieceCells,rowTransitions,columnTransitions,holes,cumulativeWells" の順で
-// カンマ区切り6個のdoubleをパースする。
-fb::ai::beam::Weights ParseWeights(const std::string& arg) {
-    std::vector<double> values;
-    std::stringstream ss(arg);
-    std::string token;
-    while (std::getline(ss, token, ',')) {
-        values.push_back(std::stod(token));
-    }
-    if (values.size() != 6) {
-        throw std::invalid_argument("--weightsは6個のカンマ区切り数値である必要があります: " + arg);
-    }
-
-    fb::ai::beam::Weights weights;
-    weights.landingHeight = values[0];
-    weights.erodedPieceCells = values[1];
-    weights.rowTransitions = values[2];
-    weights.columnTransitions = values[3];
-    weights.holes = values[4];
-    weights.cumulativeWells = values[5];
-    return weights;
-}
-
 Options ParseOptions(int argc, char** argv) {
     Options opts;
     for (int i = 1; i < argc; ++i) {
@@ -77,7 +53,7 @@ Options ParseOptions(int argc, char** argv) {
         } else if (arg == "--output" && i + 1 < argc) {
             opts.outputCsvPath = argv[++i];
         } else if (arg == "--weights" && i + 1 < argc) {
-            opts.weights = ParseWeights(argv[++i]);
+            opts.weights = fb::ai::beam::ParseWeights(argv[++i]);
         }
     }
     return opts;

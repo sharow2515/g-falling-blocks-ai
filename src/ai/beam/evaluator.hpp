@@ -1,5 +1,6 @@
 #pragma once
 
+#include <string>
 #include <vector>
 
 #include "ai/common/occupancy_grid.hpp"
@@ -33,6 +34,10 @@ struct Weights {
 // featuresとweightsの重み付き線形和。
 // ただしcausesGameOverがtrueなら、他の選択肢がある限り絶対に選ばれないよう-infinityを返す。
 double Evaluate(const Features& features, const Weights& weights = Weights{});
+
+// "landingHeight,erodedPieceCells,rowTransitions,columnTransitions,holes,cumulativeWells" の順で
+// カンマ区切り6個のdoubleをパースする。不正な場合はstd::invalid_argumentを投げる。
+Weights ParseWeights(const std::string& arg);
 
 // 既にcellsを配置してライン消去まで済ませたclearedBoardから特徴量を計算する。
 // cellsは配置時のワールド座標(消去前)、clearedRowsはそのときの消去行番号のリスト。
