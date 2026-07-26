@@ -8,7 +8,8 @@
 
 namespace fb::ai::beam2 {
 
-// ai::beamの6特徴量 + bumpiness(隣接列高さの差の絶対値の総和) + aggregateHeight(各列の高さの総和)。
+// ai::beamの6特徴量 + bumpiness(隣接列高さの差の絶対値の総和) + aggregateHeight(各列の高さの総和)
+// + maxHeight(最も高い列の高さ)。
 struct Features {
     double landingHeight = 0.0;
     double erodedPieceCells = 0.0;
@@ -18,6 +19,7 @@ struct Features {
     double cumulativeWells = 0.0;
     double bumpiness = 0.0;
     double aggregateHeight = 0.0;
+    double maxHeight = 0.0;
 
     // その配置でゲームオーバーになるかどうか
     // trueの場合、Evaluate()は他の指標に関係なく-infinityを返す。
@@ -33,14 +35,15 @@ struct Weights {
     double cumulativeWells = -1.0;
     double bumpiness = 0.0;
     double aggregateHeight = 0.0;
+    double maxHeight = 0.0;
 };
 
 // featuresとweightsの重み付き線形和。
 // ただしcausesGameOverがtrueなら、他の選択肢がある限り絶対に選ばれないよう-infinityを返す。
 double Evaluate(const Features& features, const Weights& weights = Weights{});
 
-// "landingHeight,erodedPieceCells,rowTransitions,columnTransitions,holes,cumulativeWells,bumpiness,aggregateHeight"
-// の順でカンマ区切り8個のdoubleをパースする。不正な場合はstd::invalid_argumentを投げる。
+// "landingHeight,erodedPieceCells,rowTransitions,columnTransitions,holes,cumulativeWells,bumpiness,
+// aggregateHeight,maxHeight" の順でカンマ区切り9個のdoubleをパースする。不正な場合はstd::invalid_argumentを投げる。
 Weights ParseWeights(const std::string& arg);
 
 // 既にcellsを配置してライン消去まで済ませたclearedBoardから特徴量を計算する。

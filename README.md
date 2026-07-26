@@ -55,7 +55,7 @@ Aiの動きを可視化するモード
 ./build/Benchmark --ai reachability            # 使用するAIを切り替える
 ./build/Benchmark --output result.csv          # ゲームごとの結果(seed,score,lines,hit_line_limit)をCSVに出力
 ./build/Benchmark --ai beam --weights "-1,1,-1,-1,-4,-1"  # beamの評価重みを変更(landingHeight,erodedPieceCells,rowTransitions,columnTransitions,holes,cumulativeWellsの順)
-./build/Benchmark --ai beam2 --weights "-1,1,-1,-1,-4,-1,0,0"  # beam2: beamにbumpiness/aggregateHeight特徴量を追加した実験用AI(重みは8個、末尾2つがbumpiness,aggregateHeight)
+./build/Benchmark --ai beam2 --weights "-1,1,-1,-1,-4,-1,0,0,0"  # beam2: beamにbumpiness/aggregateHeight/maxHeight特徴量を追加した実験用AI(重みは9個、末尾3つがbumpiness,aggregateHeight,maxHeight)
 ```
 
 ```bash
@@ -67,7 +67,7 @@ uv run scripts/plot_benchmark.py result.csv    # result.csv.{score_hist,lines_hi
 ```bash
 uv run scripts/tune_weights.py                 # デフォルトは動作確認用の小さい設定(すぐ終わる)、対象はbeam
 uv run scripts/tune_weights.py --ai beam2 --games 30 --beam-width 50 --beam-depth 5 --max-generations 40  # 本番設定
-uv run scripts/tune_weights.py --ai beam2 --x0="-1,1,-1,-1,-4,-1,-1.5,0" --games 30 --beam-width 50 --beam-depth 5 --max-generations 40  # --x0で初期値を指定してウォームスタート
+uv run scripts/tune_weights.py --ai beam2 --x0="-1,1,-1,-1,-4,-1,-1.5,0,0" --games 30 --beam-width 50 --beam-depth 5 --max-generations 40  # --x0で初期値を指定してウォームスタート
 ```
 
 世代ごとの結果は`tune_weights_log.csv`に記録される。

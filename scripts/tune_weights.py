@@ -14,17 +14,17 @@ import sys
 
 import cma
 
-# 各AIのWeights構造体のフィールド順。beam2はbeamにbumpiness/aggregateHeightを追加したもの。
+# 各AIのWeights構造体のフィールド順。beam2はbeamにbumpiness/aggregateHeight/maxHeightを追加したもの。
 WEIGHT_NAMES_BY_AI = {
     "beam": ["landingHeight", "erodedPieceCells", "rowTransitions", "columnTransitions", "holes", "cumulativeWells"],
     "beam2": [
         "landingHeight", "erodedPieceCells", "rowTransitions", "columnTransitions", "holes", "cumulativeWells",
-        "bumpiness", "aggregateHeight",
+        "bumpiness", "aggregateHeight", "maxHeight",
     ],
 }
 DEFAULT_WEIGHTS_BY_AI = {
     "beam": [-1.0, 1.0, -1.0, -1.0, -4.0, -1.0],
-    "beam2": [-1.0, 1.0, -1.0, -1.0, -4.0, -1.0, 0.0, 0.0],
+    "beam2": [-1.0, 1.0, -1.0, -1.0, -4.0, -1.0, 0.0, 0.0, 0.0],
 }
 
 

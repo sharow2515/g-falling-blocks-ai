@@ -32,4 +32,7 @@ int ComputeBumpiness(const OccupancyGrid& grid);
 // 各列の高さ(最上段の埋まっているセルの位置+1、空列は0)の総和。
 int ComputeAggregateHeight(const OccupancyGrid& grid);
 
+// 各列の高さ(最上段の埋まっているセルの位置+1、空列は0)の最大値。
+int ComputeMaxHeight(const OccupancyGrid& grid);
+
 }  // namespace fb::ai::common

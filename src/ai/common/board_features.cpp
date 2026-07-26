@@ -111,6 +111,17 @@ int ComputeAggregateHeight(const OccupancyGrid& grid) {
     return total;
 }
 
+int ComputeMaxHeight(const OccupancyGrid& grid) {
+    const int width = grid.Width();
+    const std::uint32_t visibleMask = (1u << grid.VisibleHeight()) - 1u;
+
+    int maxHeight = 0;
+    for (int x = 0; x < width; ++x) {
+        maxHeight = std::max(maxHeight, ColumnHeight(grid, visibleMask, x));
+    }
+    return maxHeight;
+}
+
 int CountCumulativeWells(const OccupancyGrid& grid) {
     const int width = grid.Width();
     const int visibleHeight = grid.VisibleHeight();
