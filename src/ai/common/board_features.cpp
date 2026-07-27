@@ -111,15 +111,26 @@ int ComputeAggregateHeight(const OccupancyGrid& grid) {
     return total;
 }
 
-int ComputeMaxHeight(const OccupancyGrid& grid) {
-    const int width = grid.Width();
+int ComputeHoleDepth(const OccupancyGrid& grid) {
+    // ColBits()はバッファ域も含む全高分のビットを持つため、見えている範囲だけに絞る。
     const std::uint32_t visibleMask = (1u << grid.VisibleHeight()) - 1u;
 
-    int maxHeight = 0;
-    for (int x = 0; x < width; ++x) {
-        maxHeight = std::max(maxHeight, ColumnHeight(grid, visibleMask, x));
+    int total = 0;
+    for (int x = 0; x < grid.Width(); ++x) {
+        std::uint32_t col = grid.ColBits(x) & visibleMask;
+        if (col == 0) continue;  // 何も埋まっていない列に穴はない
+        int highestBit = 31 - __builtin_clz(col);
+        std::uint32_t belowMask = (1u << highestBit) - 1u;
+        std::uint32_t holesMask = belowMask & ~col;  // 最上位ビットより下にある穴のビット集合
+
+        std::uint32_t v = holesMask;
+        while (v != 0) {
+            int y = __builtin_ctz(v);
+            total += __builtin_popcount(col >> (y + 1));  // yより上にある埋まったセルの数
+            v &= v - 1;  // 最下位の1ビットをクリア
+        }
     }
-    return maxHeight;
+    return total;
 }
 
 int CountCumulativeWells(const OccupancyGrid& grid) {

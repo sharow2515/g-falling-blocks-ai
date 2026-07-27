@@ -55,7 +55,7 @@ Aiの動きを可視化するモード
 ./build/Benchmark --ai reachability            # 使用するAIを切り替える
 ./build/Benchmark --output result.csv          # ゲームごとの結果(seed,score,lines,hit_line_limit)をCSVに出力
 ./build/Benchmark --ai beam --weights "-1,1,-1,-1,-4,-1"  # beamの評価重みを変更(landingHeight,erodedPieceCells,rowTransitions,columnTransitions,holes,cumulativeWellsの順)
-./build/Benchmark --ai beam2 --weights "-1,1,-1,-1,-4,-1,0,0,0"  # beam2: beamにbumpiness/aggregateHeight/maxHeight特徴量を追加した実験用AI(重みは9個、末尾3つがbumpiness,aggregateHeight,maxHeight)
+./build/Benchmark --ai beam2 --weights "-1,1,-1,-1,-4,-1,0,0,0"  # beam2: beamにbumpiness/aggregateHeight/holeDepth特徴量を追加した実験用AI(重みは9個、末尾3つがbumpiness,aggregateHeight,holeDepth)
 ```
 
 ```bash
