@@ -47,7 +47,7 @@ std::optional<std::string> ResolveStringOption(int argc, char** argv, const std:
 
 // --ai simple(デフォルト) / --ai reachability / --ai beam / --ai beam2
 //   (beam/beam2は --beam-width N / --beam-depth N (0〜5) / --weights を追加指定可能。
-//    --weightsはbeamなら6個、beam2なら7個のカンマ区切り数値)。
+//    --weightsの個数はai::beam::Weights/ai::beam2::Weightsの次元数と同じ)。
 std::unique_ptr<fb::ai::AiPlayer> ResolveAiPlayer(int argc, char** argv) {
     std::string name = "simple";
     for (int i = 1; i < argc; ++i) {
