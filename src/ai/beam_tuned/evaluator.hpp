@@ -6,7 +6,7 @@
 #include "ai/common/occupancy_grid.hpp"
 #include "core/types.hpp"
 
-namespace fb::ai::beam2 {
+namespace fb::ai::beam_tuned {
 
 // ai::beamの6特徴量 + bumpiness(隣接列高さの差の絶対値の総和) + aggregateHeight(各列の高さの総和)
 // + holeDepth(各穴の真上に積まれたセル数の合計)。
@@ -27,15 +27,15 @@ struct Features {
 };
 
 struct Weights {
-    double landingHeight = -1.0;
-    double erodedPieceCells = 1.0;
-    double rowTransitions = -1.0;
-    double columnTransitions = -1.0;
-    double holes = -4.0;
-    double cumulativeWells = -1.0;
-    double bumpiness = 0.0;
-    double aggregateHeight = 0.0;
-    double holeDepth = 0.0;
+    double landingHeight = -4.222872604628931;
+    double erodedPieceCells = 0.5267286904410413;
+    double rowTransitions = -9.981653421474142;
+    double columnTransitions = -4.244974414578996;
+    double holes = -4.064196036562922;
+    double cumulativeWells = -2.874873002269033;
+    double bumpiness = -0.816394344335359;
+    double aggregateHeight = -3.343403961839296;
+    double holeDepth = -2.486832413166647;
 };
 
 // featuresとweightsの重み付き線形和。
@@ -52,4 +52,4 @@ Weights ParseWeights(const std::string& arg);
 Features ComputeFeaturesFromClearedBoard(const common::OccupancyGrid& clearedBoard,
                                           const std::vector<core::Vec2i>& cells, const std::vector<int>& clearedRows);
 
-}  // namespace fb::ai::beam2
+}  // namespace fb::ai::beam_tuned

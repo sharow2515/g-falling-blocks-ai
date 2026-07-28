@@ -1,4 +1,4 @@
-#include "ai/beam2/evaluator.hpp"
+#include "ai/beam_tuned/evaluator.hpp"
 
 #include <limits>
 #include <sstream>
@@ -7,7 +7,7 @@
 #include "ai/common/board_features.hpp"
 #include "ai/common/occupancy_grid.hpp"
 
-namespace fb::ai::beam2 {
+namespace fb::ai::beam_tuned {
 
 double Evaluate(const Features& f, const Weights& w) {
     if (f.causesGameOver) return -std::numeric_limits<double>::infinity();
@@ -60,4 +60,4 @@ Features ComputeFeaturesFromClearedBoard(const common::OccupancyGrid& clearedBoa
     return f;
 }
 
-}  // namespace fb::ai::beam2
+}  // namespace fb::ai::beam_tuned

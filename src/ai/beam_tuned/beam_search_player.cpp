@@ -1,16 +1,16 @@
-#include "ai/beam2/beam_search_player.hpp"
+#include "ai/beam_tuned/beam_search_player.hpp"
 
 #include <algorithm>
 #include <limits>
 #include <optional>
 
-#include "ai/beam2/evaluator.hpp"
+#include "ai/beam_tuned/evaluator.hpp"
 #include "ai/common/move_execution.hpp"
 #include "ai/common/occupancy_grid.hpp"
 #include "ai/common/path_conversion.hpp"
 #include "ai/common/reachable_search.hpp"
 
-namespace fb::ai::beam2 {
+namespace fb::ai::beam_tuned {
 
 namespace {
 
@@ -290,4 +290,4 @@ std::vector<PlayerMove> BeamSearchPlayer::BuildPlan(core::Game& game) {
     return beam.front().firstMove;
 }
 
-}  // namespace fb::ai::beam2
+}  // namespace fb::ai::beam_tuned

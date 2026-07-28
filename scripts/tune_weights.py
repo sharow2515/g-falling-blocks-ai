@@ -3,9 +3,9 @@
 #     "cma",
 # ]
 # ///
-"""CMA-ESでbeam/beam2 AIの評価重み(Weights)を最適化する。
+"""CMA-ESでbeam/beam_tuned AIの評価重み(Weights)を最適化する。
 
-使い方: uv run scripts/tune_weights.py --ai beam2
+使い方: uv run scripts/tune_weights.py --ai beam_tuned
 """
 
 import argparse
@@ -14,17 +14,20 @@ import sys
 
 import cma
 
-# 各AIのWeights構造体のフィールド順。beam2はbeamにbumpiness/aggregateHeight/holeDepthを追加したもの。
+# 各AIのWeights構造体のフィールド順。beam_tunedはbeamにbumpiness/aggregateHeight/holeDepthを追加したもの。
 WEIGHT_NAMES_BY_AI = {
     "beam": ["landingHeight", "erodedPieceCells", "rowTransitions", "columnTransitions", "holes", "cumulativeWells"],
-    "beam2": [
+    "beam_tuned": [
         "landingHeight", "erodedPieceCells", "rowTransitions", "columnTransitions", "holes", "cumulativeWells",
         "bumpiness", "aggregateHeight", "holeDepth",
     ],
 }
 DEFAULT_WEIGHTS_BY_AI = {
     "beam": [-1.0, 1.0, -1.0, -1.0, -4.0, -1.0],
-    "beam2": [-1.0, 1.0, -1.0, -1.0, -4.0, -1.0, 0.0, 0.0, 0.0],
+    "beam_tuned": [
+        -4.222872604628931, 0.5267286904410413, -9.981653421474142, -4.244974414578996, -4.064196036562922,
+        -2.874873002269033, -0.816394344335359, -3.343403961839296, -2.486832413166647,
+    ],
 }
 
 
