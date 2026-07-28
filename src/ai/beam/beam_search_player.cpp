@@ -63,7 +63,8 @@ struct BeamNode {
 // usedHold: この手でHoldコマンドを使ったか(firstMove構築のため)。
 // newHoldMino/newSeqIndex: この手を打った後のHold内容・sequence消費位置。
 void ExpandOption(const BeamNode& node, const core::Mino& pieceToPlace, bool usedHold,
-                  const core::Mino* newHoldMino, int newSeqIndex, std::vector<BeamNode>& out) {
+                  const core::Mino* newHoldMino, int newSeqIndex, const Weights& weights,
+                  std::vector<BeamNode>& out) {
     std::optional<SpawnState> spawn = ComputeSpawnState(node.board, pieceToPlace);
     if (!spawn.has_value()) return;  // このピースはこの盤面には出現できない(手詰まり)
 
@@ -77,7 +78,7 @@ void ExpandOption(const BeamNode& node, const core::Mino& pieceToPlace, bool use
         newBoard.ClearFullLines(clearedRows);
 
         // 合算しない: 今置き終えたばかりのこの盤面を評価した値でスコアを上書きする。
-        double score = Evaluate(ComputeFeaturesFromClearedBoard(newBoard, placement.cells, clearedRows));
+        double score = Evaluate(ComputeFeaturesFromClearedBoard(newBoard, placement.cells, clearedRows), weights);
 
         BeamNode child;
         child.board = std::move(newBoard);
@@ -147,8 +148,8 @@ struct CandidateRef {
 
 }  // namespace
 
-BeamSearchPlayer::BeamSearchPlayer(int beamWidth, int searchDepth)
-    : beamWidth_(beamWidth), searchDepth_(searchDepth) {
+BeamSearchPlayer::BeamSearchPlayer(int beamWidth, int searchDepth, Weights weights)
+    : beamWidth_(beamWidth), searchDepth_(searchDepth), weights_(weights) {
     if (beamWidth < 1) {
         throw std::invalid_argument("BeamSearchPlayer: beamWidthは1以上である必要があります");
     }
@@ -245,7 +246,7 @@ std::vector<PlayerMove> BeamSearchPlayer::BuildPlan(core::Game& game) {
                     continue;
                 }
                 ExpandOption(*task.node, *task.pieceToPlace, task.usedHold, task.newHoldMino, task.newSeqIndex,
-                             perTaskResults[static_cast<std::size_t>(i)]);
+                             weights_, perTaskResults[static_cast<std::size_t>(i)]);
             }  // 全スレッドのExpandOptionが完了してから先に進む
 
 #pragma omp single

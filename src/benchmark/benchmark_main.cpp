@@ -4,10 +4,15 @@
 #include <fstream>
 #include <iostream>
 #include <memory>
+#include <optional>
+#include <stdexcept>
 #include <string>
 #include <vector>
 
 #include "ai/beam/beam_search_player.hpp"
+#include "ai/beam/evaluator.hpp"
+#include "ai/beam_tuned/beam_search_player.hpp"
+#include "ai/beam_tuned/evaluator.hpp"
 #include "ai/player.hpp"
 #include "ai/reachability/reachability_player.hpp"
 #include "ai/simple/simple_player.hpp"
@@ -21,10 +26,11 @@ struct Options {
     std::uint64_t seedStart = 1;
     int maxLines = 500;
     std::string minosJsonPath = "assets/minos_hard.json";
-    std::string aiName = "simple";  // "simple" | "reachability" | "beam"
+    std::string aiName = "simple";  // "simple" | "reachability" | "beam" | "beam_tuned"
     int beamWidth = 20;
     int beamDepth = 2;
     std::string outputCsvPath;  // 空文字ならCSV出力しない
+    std::optional<std::string> weightsArg;  // --ai beam/beam_tuned のときのみ使用。未指定ならデフォルト重み
 };
 
 Options ParseOptions(int argc, char** argv) {
@@ -49,6 +55,8 @@ Options ParseOptions(int argc, char** argv) {
             opts.minosJsonPath = "assets/minos_hard.json";
         } else if (arg == "--output" && i + 1 < argc) {
             opts.outputCsvPath = argv[++i];
+        } else if (arg == "--weights" && i + 1 < argc) {
+            opts.weightsArg = argv[++i];
         }
     }
     return opts;
@@ -57,7 +65,14 @@ Options ParseOptions(int argc, char** argv) {
 std::unique_ptr<fb::ai::AiPlayer> MakePlayer(const Options& opts) {
     if (opts.aiName == "reachability") return std::make_unique<fb::ai::reachability::ReachabilityPlayer>();
     if (opts.aiName == "beam") {
-        return std::make_unique<fb::ai::beam::BeamSearchPlayer>(opts.beamWidth, opts.beamDepth);
+        fb::ai::beam::Weights weights;
+        if (opts.weightsArg) weights = fb::ai::beam::ParseWeights(*opts.weightsArg);
+        return std::make_unique<fb::ai::beam::BeamSearchPlayer>(opts.beamWidth, opts.beamDepth, weights);
+    }
+    if (opts.aiName == "beam_tuned") {
+        fb::ai::beam_tuned::Weights weights;
+        if (opts.weightsArg) weights = fb::ai::beam_tuned::ParseWeights(*opts.weightsArg);
+        return std::make_unique<fb::ai::beam_tuned::BeamSearchPlayer>(opts.beamWidth, opts.beamDepth, weights);
     }
     return std::make_unique<fb::ai::SimplePlayer>();
 }
@@ -65,7 +80,13 @@ std::unique_ptr<fb::ai::AiPlayer> MakePlayer(const Options& opts) {
 }  // namespace
 
 int main(int argc, char** argv) {
-    Options opts = ParseOptions(argc, argv);
+    Options opts;
+    try {
+        opts = ParseOptions(argc, argv);
+    } catch (const std::exception& e) {
+        std::cerr << "オプションが不正です: " << e.what() << "\n";
+        return 1;
+    }
 
     std::vector<fb::core::Mino> minos;
     try {

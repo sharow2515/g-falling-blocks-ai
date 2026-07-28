@@ -26,4 +26,13 @@ int CountColumnTransitions(const OccupancyGrid& grid);
 // 井戸(両側が埋まった縦の空き)の深さdごとにd(d+1)/2を加算した合計。
 int CountCumulativeWells(const OccupancyGrid& grid);
 
+// 隣接する列の高さ(最上段の埋まっているセルの位置+1、空列は0)の差の絶対値の総和。
+int ComputeBumpiness(const OccupancyGrid& grid);
+
+// 各列の高さ(最上段の埋まっているセルの位置+1、空列は0)の総和。
+int ComputeAggregateHeight(const OccupancyGrid& grid);
+
+// 各穴について、その穴の真上に積まれている埋まったセルの数を合計したもの(穴の深さ)。
+int ComputeHoleDepth(const OccupancyGrid& grid);
+
 }  // namespace fb::ai::common

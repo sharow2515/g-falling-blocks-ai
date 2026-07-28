@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 
+#include "ai/beam/evaluator.hpp"
 #include "ai/player.hpp"
 #include "core/game.hpp"
 
@@ -14,7 +15,7 @@ inline constexpr int kMaxSearchDepth = 5;
 
 class BeamSearchPlayer : public AiPlayer {
 public:
-    BeamSearchPlayer(int beamWidth, int searchDepth);
+    BeamSearchPlayer(int beamWidth, int searchDepth, Weights weights = Weights{});
 
     void Update(core::Game& game) override;
     std::vector<PlayerMove> Plan(core::Game& game) override;
@@ -25,6 +26,7 @@ private:
 
     int beamWidth_;
     int searchDepth_;
+    Weights weights_;
     int lastSeenSpawnEventId_ = -1;
 };
 

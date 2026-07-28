@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cassert>
 #include <cstdint>
+#include <cstdlib>
 #include <limits>
 
 namespace fb::ai::common {
@@ -74,6 +75,62 @@ int CountColumnTransitions(const OccupancyGrid& grid) {
         transitions += __builtin_popcount((extended ^ (extended >> 1)) & compareMask);
     }
     return transitions;
+}
+
+namespace {
+// 列xの高さ = 最上段の埋まっているビット位置+1(空列は0)。CountHolesと同じ考え方。
+int ColumnHeight(const OccupancyGrid& grid, std::uint32_t visibleMask, int x) {
+    std::uint32_t col = grid.ColBits(x) & visibleMask;
+    if (col == 0) return 0;
+    return 32 - __builtin_clz(col);
+}
+}  // namespace
+
+int ComputeBumpiness(const OccupancyGrid& grid) {
+    const int width = grid.Width();
+    const std::uint32_t visibleMask = (1u << grid.VisibleHeight()) - 1u;
+
+    int bumpiness = 0;
+    int prevHeight = ColumnHeight(grid, visibleMask, 0);
+    for (int x = 1; x < width; ++x) {
+        int height = ColumnHeight(grid, visibleMask, x);
+        bumpiness += std::abs(height - prevHeight);
+        prevHeight = height;
+    }
+    return bumpiness;
+}
+
+int ComputeAggregateHeight(const OccupancyGrid& grid) {
+    const int width = grid.Width();
+    const std::uint32_t visibleMask = (1u << grid.VisibleHeight()) - 1u;
+
+    int total = 0;
+    for (int x = 0; x < width; ++x) {
+        total += ColumnHeight(grid, visibleMask, x);
+    }
+    return total;
+}
+
+int ComputeHoleDepth(const OccupancyGrid& grid) {
+    // ColBits()はバッファ域も含む全高分のビットを持つため、見えている範囲だけに絞る。
+    const std::uint32_t visibleMask = (1u << grid.VisibleHeight()) - 1u;
+
+    int total = 0;
+    for (int x = 0; x < grid.Width(); ++x) {
+        std::uint32_t col = grid.ColBits(x) & visibleMask;
+        if (col == 0) continue;  // 何も埋まっていない列に穴はない
+        int highestBit = 31 - __builtin_clz(col);
+        std::uint32_t belowMask = (1u << highestBit) - 1u;
+        std::uint32_t holesMask = belowMask & ~col;  // 最上位ビットより下にある穴のビット集合
+
+        std::uint32_t v = holesMask;
+        while (v != 0) {
+            int y = __builtin_ctz(v);
+            total += __builtin_popcount(col >> (y + 1));  // yより上にある埋まったセルの数
+            v &= v - 1;  // 最下位の1ビットをクリア
+        }
+    }
+    return total;
 }
 
 int CountCumulativeWells(const OccupancyGrid& grid) {
