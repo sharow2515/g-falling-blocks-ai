@@ -111,11 +111,13 @@ int main(int argc, char** argv) {
             std::cerr << "出力ファイルを開けませんでした: " << opts.outputCsvPath << "\n";
             return 1;
         }
-        csv << "seed,score,lines,hit_line_limit\n";
+        csv << "seed,score,lines,hit_line_limit,avg_decision_ms\n";
     }
 
     double scoreSum = 0.0;
     double linesSum = 0.0;
+    double decisionTimeMsSum = 0.0;
+    int piecesSum = 0;
     int bestScore = 0;
     int worstScore = -1;
     int lineLimitHits = 0;
@@ -126,24 +128,29 @@ int main(int argc, char** argv) {
 
         scoreSum += result.score;
         linesSum += result.totalLines;
+        decisionTimeMsSum += result.decisionTimeMs;
+        piecesSum += result.totalPieces;
         if (result.score > bestScore) bestScore = result.score;
         if (worstScore < 0 || result.score < worstScore) worstScore = result.score;
         if (result.hitLineLimit) ++lineLimitHits;
 
         if (csv.is_open()) {
+            double gameAvgDecisionMs = result.totalPieces > 0 ? result.decisionTimeMs / result.totalPieces : 0.0;
             csv << seed << "," << result.score << "," << result.totalLines << "," << (result.hitLineLimit ? 1 : 0)
-                << "\n";
+                << "," << gameAvgDecisionMs << "\n";
             csv.flush();
         }
     }
 
     double avgScore = opts.games > 0 ? scoreSum / opts.games : 0.0;
     double avgLines = opts.games > 0 ? linesSum / opts.games : 0.0;
+    double avgDecisionMs = piecesSum > 0 ? decisionTimeMsSum / piecesSum : 0.0;
 
     std::cout << "ai: " << player->Name() << "\n";
     std::cout << "games: " << opts.games << "\n";
     std::cout << "average score: " << avgScore << "\n";
     std::cout << "average lines: " << avgLines << "\n";
+    std::cout << "average decision time (ms/piece): " << avgDecisionMs << "\n";
     std::cout << "best score: " << bestScore << "\n";
     std::cout << "worst score: " << worstScore << "\n";
     if (lineLimitHits > 0) {
