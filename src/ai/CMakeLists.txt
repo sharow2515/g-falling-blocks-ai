@@ -13,6 +13,8 @@ add_library(ai STATIC
     beam/beam_search_player.cpp
     beam_tuned/evaluator.cpp
     beam_tuned/beam_search_player.cpp
+    beam_unique/evaluator.cpp
+    beam_unique/beam_search_player.cpp
 )
 
 target_link_libraries(ai PUBLIC core OpenMP::OpenMP_CXX)

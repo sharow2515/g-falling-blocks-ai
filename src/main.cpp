@@ -9,6 +9,8 @@
 #include "ai/beam/evaluator.hpp"
 #include "ai/beam_tuned/beam_search_player.hpp"
 #include "ai/beam_tuned/evaluator.hpp"
+#include "ai/beam_unique/beam_search_player.hpp"
+#include "ai/beam_unique/evaluator.hpp"
 #include "ai/player.hpp"
 #include "ai/reachability/reachability_player.hpp"
 #include "ai/simple/simple_player.hpp"
@@ -76,6 +78,15 @@ std::unique_ptr<fb::ai::AiPlayer> ResolveAiPlayer(int argc, char** argv) {
             weights = fb::ai::beam_tuned::ParseWeights(*arg);
         }
         return std::make_unique<fb::ai::beam_tuned::BeamSearchPlayer>(beamWidth, beamDepth, weights);
+    }
+    if (name == "beam_unique") {
+        int beamWidth = ResolveIntOption(argc, argv, "--beam-width", 20);
+        int beamDepth = ResolveIntOption(argc, argv, "--beam-depth", 2);
+        fb::ai::beam_unique::Weights weights;
+        if (auto arg = ResolveStringOption(argc, argv, "--weights")) {
+            weights = fb::ai::beam_unique::ParseWeights(*arg);
+        }
+        return std::make_unique<fb::ai::beam_unique::BeamSearchPlayer>(beamWidth, beamDepth, weights);
     }
     return std::make_unique<fb::ai::SimplePlayer>();
 }
