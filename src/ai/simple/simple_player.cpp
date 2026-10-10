@@ -32,9 +32,7 @@ RotationState ApplyRotationStep(const core::Board& board, const core::Mino& mino
 
 }  // namespace
 
-std::vector<PlayerMove> SimplePlayer::Plan(core::Game& game) { return BuildPlan(game); }
-
-std::vector<PlayerMove> SimplePlayer::BuildPlan(core::Game& game) {
+std::vector<PlayerMove> SimplePlayer::Plan(const core::Game& game) {
     if (game.IsGameOver() || game.IsPaused()) return {};
     if (!game.GetActivePiece().IsActive()) return {};
 

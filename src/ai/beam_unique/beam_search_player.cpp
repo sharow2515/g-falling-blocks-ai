@@ -185,9 +185,7 @@ BeamSearchPlayer::BeamSearchPlayer(int beamWidth, int searchDepth, Weights weigh
     }
 }
 
-std::vector<PlayerMove> BeamSearchPlayer::Plan(core::Game& game) { return BuildPlan(game); }
-
-std::vector<PlayerMove> BeamSearchPlayer::BuildPlan(core::Game& game) {
+std::vector<PlayerMove> BeamSearchPlayer::Plan(const core::Game& game) {
     if (game.IsGameOver() || game.IsPaused()) return {};
     if (!game.GetActivePiece().IsActive()) return {};
 

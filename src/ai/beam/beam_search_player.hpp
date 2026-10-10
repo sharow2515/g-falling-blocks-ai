@@ -17,12 +17,10 @@ class BeamSearchPlayer : public AiPlayer {
 public:
     BeamSearchPlayer(int beamWidth, int searchDepth, Weights weights = Weights{});
 
-    std::vector<PlayerMove> Plan(core::Game& game) override;
+    std::vector<PlayerMove> Plan(const core::Game& game) override;
     std::string Name() const override { return "Beam"; }
 
 private:
-    std::vector<PlayerMove> BuildPlan(core::Game& game);
-
     int beamWidth_;
     int searchDepth_;
     Weights weights_;

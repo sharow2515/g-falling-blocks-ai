@@ -12,11 +12,8 @@ namespace fb::ai::reachability {
 // 評価関数で採点して最善のものを選ぶAI。
 class ReachabilityPlayer : public AiPlayer {
 public:
-    std::vector<PlayerMove> Plan(core::Game& game) override;
+    std::vector<PlayerMove> Plan(const core::Game& game) override;
     std::string Name() const override { return "Reachability"; }
-
-private:
-    std::vector<PlayerMove> BuildPlan(core::Game& game);
 };
 
 }  // namespace fb::ai::reachability

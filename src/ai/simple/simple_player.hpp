@@ -14,11 +14,8 @@ namespace fb::ai {
 // SFML等appへの依存はなく、core::Gameのコマンドだけを叩く。
 class SimplePlayer : public AiPlayer {
 public:
-    std::vector<PlayerMove> Plan(core::Game& game) override;
+    std::vector<PlayerMove> Plan(const core::Game& game) override;
     std::string Name() const override { return "Simple"; }
-
-private:
-    std::vector<PlayerMove> BuildPlan(core::Game& game);
 };
 
 }  // namespace fb::ai

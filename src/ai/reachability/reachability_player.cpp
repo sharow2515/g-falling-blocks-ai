@@ -6,9 +6,7 @@
 
 namespace fb::ai::reachability {
 
-std::vector<PlayerMove> ReachabilityPlayer::Plan(core::Game& game) { return BuildPlan(game); }
-
-std::vector<PlayerMove> ReachabilityPlayer::BuildPlan(core::Game& game) {
+std::vector<PlayerMove> ReachabilityPlayer::Plan(const core::Game& game) {
     if (game.IsGameOver() || game.IsPaused()) return {};
     if (!game.GetActivePiece().IsActive()) return {};
 

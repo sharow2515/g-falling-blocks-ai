@@ -26,7 +26,7 @@ public:
 
 
     // 操作できない状態(ゲームオーバーなど)や、おける場所がない場合は空を返す。
-    virtual std::vector<PlayerMove> Plan(core::Game& game) = 0;
+    virtual std::vector<PlayerMove> Plan(const core::Game& game) = 0;
 
     // ログ・ベンチマーク結果の表示などに使う名前。
     virtual std::string Name() const = 0;
