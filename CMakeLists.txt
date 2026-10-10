@@ -22,7 +22,8 @@ add_executable(FallingBlocks
     src/main.cpp
     src/app/input_controller.cpp
     src/app/renderer.cpp
-    src/app/application.cpp
+    src/app/application_base.cpp
+    src/app/human_play_application.cpp
     src/app/ai_visualize_application.cpp
 )
 target_link_libraries(FallingBlocks PRIVATE core ai SFML::Graphics SFML::Window SFML::System)

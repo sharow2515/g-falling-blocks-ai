@@ -15,7 +15,7 @@
 #include "ai/reachability/reachability_player.hpp"
 #include "ai/simple/simple_player.hpp"
 #include "app/ai_visualize_application.hpp"
-#include "app/application.hpp"
+#include "app/human_play_application.hpp"
 
 namespace {
 
@@ -121,11 +121,31 @@ std::optional<std::uint64_t> ResolveSeed(int argc, char** argv) {
     return std::nullopt;
 }
 
+// --visualize のときだけ意味を持つオプション。--visualize なしで渡されたら見つけて返す。
+std::optional<std::string> FindAiOnlyOption(int argc, char** argv) {
+    const char* aiOnlyOptions[] = {"--ai", "--beam-width", "--beam-depth", "--weights", "--ai-delay"};
+    for (int i = 1; i < argc; ++i) {
+        for (const char* option : aiOnlyOptions) {
+            if (std::string(argv[i]) == option) return std::string(option);
+        }
+    }
+    return std::nullopt;
+}
+
 }  // namespace
 
 int main(int argc, char** argv) {
     std::string minosJsonPath = ResolveMinosJsonPath(argc, argv);
     std::optional<std::uint64_t> seed = ResolveSeed(argc, argv);
+
+    if (!HasVisualizeFlag(argc, argv)) {
+        if (auto option = FindAiOnlyOption(argc, argv)) {
+            std::cerr << *option << " は --visualize と一緒に指定してください\n";
+            return 1;
+        }
+        fb::app::HumanPlayApplication app(minosJsonPath, seed);
+        return app.Run();
+    }
 
     std::unique_ptr<fb::ai::AiPlayer> aiPlayer;
     try {
@@ -135,11 +155,6 @@ int main(int argc, char** argv) {
         return 1;
     }
 
-    if (HasVisualizeFlag(argc, argv)) {
-        fb::app::AiVisualizeApplication app(minosJsonPath, std::move(aiPlayer), ResolveAiDelay(argc, argv), seed);
-        return app.Run();
-    }
-
-    fb::app::Application app(minosJsonPath, std::move(aiPlayer), seed);
+    fb::app::AiVisualizeApplication app(minosJsonPath, std::move(aiPlayer), ResolveAiDelay(argc, argv), seed);
     return app.Run();
 }

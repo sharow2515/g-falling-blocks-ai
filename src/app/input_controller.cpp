@@ -11,7 +11,7 @@ bool InputController::IsPressed(KeyAction action) const {
     return currPressed_[static_cast<std::size_t>(action)];
 }
 
-void InputController::HandleHorizontalMovement(core::Game& game, float dt) {
+void InputController::HandleHorizontalMovement(core::Game& game, float deltaSeconds) {
     // 左移動
     if (WasPressedThisFrame(KeyAction::MoveLeft)) {
         game.MoveLeft();
@@ -19,13 +19,13 @@ void InputController::HandleHorizontalMovement(core::Game& game, float dt) {
         dasActiveLeft_ = false;
         arrTimerLeft_ = 0.f;
     } else if (IsPressed(KeyAction::MoveLeft)) {
-        dasTimerLeft_ += dt;
+        dasTimerLeft_ += deltaSeconds;
         if (!dasActiveLeft_ && dasTimerLeft_ >= dasDelay_) {
             dasActiveLeft_ = true;
             arrTimerLeft_ = 0.f;
             game.MoveLeft();
         } else if (dasActiveLeft_) {
-            arrTimerLeft_ += dt;
+            arrTimerLeft_ += deltaSeconds;
             while (arrTimerLeft_ >= arrInterval_) {
                 game.MoveLeft();
                 arrTimerLeft_ -= arrInterval_;
@@ -43,13 +43,13 @@ void InputController::HandleHorizontalMovement(core::Game& game, float dt) {
         dasActiveRight_ = false;
         arrTimerRight_ = 0.f;
     } else if (IsPressed(KeyAction::MoveRight)) {
-        dasTimerRight_ += dt;
+        dasTimerRight_ += deltaSeconds;
         if (!dasActiveRight_ && dasTimerRight_ >= dasDelay_) {
             dasActiveRight_ = true;
             arrTimerRight_ = 0.f;
             game.MoveRight();
         } else if (dasActiveRight_) {
-            arrTimerRight_ += dt;
+            arrTimerRight_ += deltaSeconds;
             while (arrTimerRight_ >= arrInterval_) {
                 game.MoveRight();
                 arrTimerRight_ -= arrInterval_;
@@ -74,14 +74,14 @@ void InputController::ResetDasArrIfNewPiece(const core::Game& game) {
     dasActiveRight_ = false;
 }
 
-void InputController::Update(core::Game& game, float dt, bool controlPiece) {
+void InputController::Update(core::Game& game, float deltaSeconds, bool controlPiece) {
     for (std::size_t i = 0; i < kActionCount; ++i) {
         currPressed_[i] = sf::Keyboard::isKeyPressed(DefaultKeyFor(static_cast<KeyAction>(i)));
     }
 
     if (controlPiece) {
         ResetDasArrIfNewPiece(game);
-        HandleHorizontalMovement(game, dt);
+        HandleHorizontalMovement(game, deltaSeconds);
 
         if (WasPressedThisFrame(KeyAction::RotateCW)) game.RotateCW();
         if (WasPressedThisFrame(KeyAction::RotateCCW)) game.RotateCCW();
@@ -97,7 +97,6 @@ void InputController::Update(core::Game& game, float dt, bool controlPiece) {
     if (!game.IsGameOver() && WasPressedThisFrame(KeyAction::Pause)) game.TogglePause();
 
     restartRequested_ = WasPressedThisFrame(KeyAction::Restart);
-    toggleAiRequested_ = WasPressedThisFrame(KeyAction::ToggleAi);
 
     prevPressed_ = currPressed_;
 }
@@ -105,12 +104,6 @@ void InputController::Update(core::Game& game, float dt, bool controlPiece) {
 bool InputController::ConsumeRestartRequested() {
     bool requested = restartRequested_;
     restartRequested_ = false;
-    return requested;
-}
-
-bool InputController::ConsumeToggleAiRequested() {
-    bool requested = toggleAiRequested_;
-    toggleAiRequested_ = false;
     return requested;
 }
 

@@ -21,18 +21,15 @@ sudo apt-get install libx11-dev libxrandr-dev libxcursor-dev libxi-dev libudev-d
 ```bash
 cmake --preset=default
 cmake --build build
-./build/FallingBlocks                    # ブロック20種類使用、AI: simple(デフォルト)
+./build/FallingBlocks                    # 人間がプレイする(ブロック20種類使用)
 ./build/FallingBlocks --easy             # ブロック7種類使用
 ./build/FallingBlocks --hard             # ブロック20種類使用
-./build/FallingBlocks --ai reachability  # 自動プレイに使うAIを切り替える
 ./build/FallingBlocks --seed 123         # ミノの出現列を指定する(未指定ならランダム)
 ```
 
-ゲーム中にAキーを押すと、指定したAIによる自動プレイのON/OFFを切り替えられる。
-
 ## AI可視化モード
 
-Aiの動きを可視化するモード
+Aiの動きを可視化するモード。`--ai` / `--beam-width` / `--beam-depth` / `--weights` / `--ai-delay` は、このモード(`--visualize`)でのみ指定できる。
 
 ```bash
 ./build/FallingBlocks --visualize                     # AI: simple(デフォルト)で可視化
