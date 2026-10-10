@@ -5,15 +5,8 @@
 #include <optional>
 #include <string>
 
-#include "ai/beam/beam_search_player.hpp"
-#include "ai/beam/evaluator.hpp"
-#include "ai/beam_tuned/beam_search_player.hpp"
-#include "ai/beam_tuned/evaluator.hpp"
-#include "ai/beam_unique/beam_search_player.hpp"
-#include "ai/beam_unique/evaluator.hpp"
+#include "ai/factory.hpp"
 #include "ai/player.hpp"
-#include "ai/reachability/reachability_player.hpp"
-#include "ai/simple/simple_player.hpp"
 #include "app/ai_visualize_application.hpp"
 #include "app/human_play_application.hpp"
 
@@ -47,48 +40,14 @@ std::optional<std::string> ResolveStringOption(int argc, char** argv, const std:
     return std::nullopt;
 }
 
-// --ai simple(デフォルト) / --ai reachability / --ai beam / --ai beam_tuned
-//   (beam/beam_tunedは --beam-width N / --beam-depth N (0〜5) / --weights を追加指定可能。
-//    --weightsの個数はai::beam::Weights/ai::beam_tuned::Weightsの次元数と同じ)。
-std::unique_ptr<fb::ai::AiPlayer> ResolveAiPlayer(int argc, char** argv) {
-    std::string name = "simple";
-    for (int i = 1; i < argc; ++i) {
-        std::string arg = argv[i];
-        if (arg == "--ai" && i + 1 < argc) {
-            name = argv[++i];
-            break;
-        }
-    }
 
-    if (name == "reachability") return std::make_unique<fb::ai::reachability::ReachabilityPlayer>();
-    if (name == "beam") {
-        int beamWidth = ResolveIntOption(argc, argv, "--beam-width", 20);
-        int beamDepth = ResolveIntOption(argc, argv, "--beam-depth", 2);
-        fb::ai::beam::Weights weights;
-        if (auto arg = ResolveStringOption(argc, argv, "--weights")) {
-            weights = fb::ai::beam::ParseWeights(*arg);
-        }
-        return std::make_unique<fb::ai::beam::BeamSearchPlayer>(beamWidth, beamDepth, weights);
-    }
-    if (name == "beam_tuned") {
-        int beamWidth = ResolveIntOption(argc, argv, "--beam-width", 20);
-        int beamDepth = ResolveIntOption(argc, argv, "--beam-depth", 2);
-        fb::ai::beam_tuned::Weights weights;
-        if (auto arg = ResolveStringOption(argc, argv, "--weights")) {
-            weights = fb::ai::beam_tuned::ParseWeights(*arg);
-        }
-        return std::make_unique<fb::ai::beam_tuned::BeamSearchPlayer>(beamWidth, beamDepth, weights);
-    }
-    if (name == "beam_unique") {
-        int beamWidth = ResolveIntOption(argc, argv, "--beam-width", 20);
-        int beamDepth = ResolveIntOption(argc, argv, "--beam-depth", 2);
-        fb::ai::beam_unique::Weights weights;
-        if (auto arg = ResolveStringOption(argc, argv, "--weights")) {
-            weights = fb::ai::beam_unique::ParseWeights(*arg);
-        }
-        return std::make_unique<fb::ai::beam_unique::BeamSearchPlayer>(beamWidth, beamDepth, weights);
-    }
-    return std::make_unique<fb::ai::SimplePlayer>();
+fb::ai::AiOptions ResolveAiOptions(int argc, char** argv) {
+    fb::ai::AiOptions options;
+    if (auto name = ResolveStringOption(argc, argv, "--ai")) options.name = *name;
+    options.beamWidth = ResolveIntOption(argc, argv, "--beam-width", options.beamWidth);
+    options.beamDepth = ResolveIntOption(argc, argv, "--beam-depth", options.beamDepth);
+    options.weights = ResolveStringOption(argc, argv, "--weights");
+    return options;
 }
 
 // --visualize: 人間操作を持たない、AI観戦専用モードで起動する。
@@ -149,7 +108,7 @@ int main(int argc, char** argv) {
 
     std::unique_ptr<fb::ai::AiPlayer> aiPlayer;
     try {
-        aiPlayer = ResolveAiPlayer(argc, argv);
+        aiPlayer = fb::ai::MakeAiPlayer(ResolveAiOptions(argc, argv));
     } catch (const std::invalid_argument& e) {
         std::cerr << "AI設定が不正です: " << e.what() << "\n";
         return 1;

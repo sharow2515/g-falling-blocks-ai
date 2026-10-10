@@ -1,4 +1,5 @@
 add_library(ai STATIC
+    factory.cpp
     common/board_features.cpp
     common/occupancy_grid.cpp
     common/reachable_search.cpp

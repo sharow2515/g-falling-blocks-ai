@@ -9,15 +9,8 @@
 #include <string>
 #include <vector>
 
-#include "ai/beam/beam_search_player.hpp"
-#include "ai/beam/evaluator.hpp"
-#include "ai/beam_tuned/beam_search_player.hpp"
-#include "ai/beam_tuned/evaluator.hpp"
-#include "ai/beam_unique/beam_search_player.hpp"
-#include "ai/beam_unique/evaluator.hpp"
+#include "ai/factory.hpp"
 #include "ai/player.hpp"
-#include "ai/reachability/reachability_player.hpp"
-#include "ai/simple/simple_player.hpp"
 #include "benchmark/runner.hpp"
 #include "core/mino_loader.hpp"
 
@@ -28,11 +21,11 @@ struct Options {
     std::uint64_t seedStart = 1;
     int maxLines = 500;
     std::string minosJsonPath = "assets/minos_hard.json";
-    std::string aiName = "simple";  // "simple" | "reachability" | "beam" | "beam_tuned"
+    std::string aiName = "simple";
     int beamWidth = 20;
     int beamDepth = 2;
     std::string outputCsvPath;  // 空文字ならCSV出力しない
-    std::optional<std::string> weightsArg;  // --ai beam/beam_tuned のときのみ使用。未指定ならデフォルト重み
+    std::optional<std::string> weightsArg;
 };
 
 Options ParseOptions(int argc, char** argv) {
@@ -64,26 +57,6 @@ Options ParseOptions(int argc, char** argv) {
     return opts;
 }
 
-std::unique_ptr<fb::ai::AiPlayer> MakePlayer(const Options& opts) {
-    if (opts.aiName == "reachability") return std::make_unique<fb::ai::reachability::ReachabilityPlayer>();
-    if (opts.aiName == "beam") {
-        fb::ai::beam::Weights weights;
-        if (opts.weightsArg) weights = fb::ai::beam::ParseWeights(*opts.weightsArg);
-        return std::make_unique<fb::ai::beam::BeamSearchPlayer>(opts.beamWidth, opts.beamDepth, weights);
-    }
-    if (opts.aiName == "beam_tuned") {
-        fb::ai::beam_tuned::Weights weights;
-        if (opts.weightsArg) weights = fb::ai::beam_tuned::ParseWeights(*opts.weightsArg);
-        return std::make_unique<fb::ai::beam_tuned::BeamSearchPlayer>(opts.beamWidth, opts.beamDepth, weights);
-    }
-    if (opts.aiName == "beam_unique") {
-        fb::ai::beam_unique::Weights weights;
-        if (opts.weightsArg) weights = fb::ai::beam_unique::ParseWeights(*opts.weightsArg);
-        return std::make_unique<fb::ai::beam_unique::BeamSearchPlayer>(opts.beamWidth, opts.beamDepth, weights);
-    }
-    return std::make_unique<fb::ai::SimplePlayer>();
-}
-
 }  // namespace
 
 int main(int argc, char** argv) {
@@ -105,7 +78,7 @@ int main(int argc, char** argv) {
 
     std::unique_ptr<fb::ai::AiPlayer> player;
     try {
-        player = MakePlayer(opts);
+        player = fb::ai::MakeAiPlayer({opts.aiName, opts.beamWidth, opts.beamDepth, opts.weightsArg});
     } catch (const std::invalid_argument& e) {
         std::cerr << "AI設定が不正です: " << e.what() << "\n";
         return 1;
