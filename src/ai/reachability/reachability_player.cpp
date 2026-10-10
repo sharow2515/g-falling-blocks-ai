@@ -1,6 +1,6 @@
 #include "ai/reachability/reachability_player.hpp"
 
-#include "ai/common/path_conversion.hpp"
+#include "ai/common/executable_plan.hpp"
 #include "ai/common/reachable_search.hpp"
 #include "ai/reachability/evaluator.hpp"
 
@@ -32,7 +32,7 @@ std::vector<PlayerMove> ReachabilityPlayer::Plan(const core::Game& game) {
         }
     }
 
-    return common::ConvertPath(best->path);
+    return common::ToExecutablePlan(best->path);
 }
 
 }  // namespace fb::ai::reachability

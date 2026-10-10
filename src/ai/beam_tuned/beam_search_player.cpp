@@ -6,7 +6,7 @@
 
 #include "ai/beam_tuned/evaluator.hpp"
 #include "ai/common/occupancy_grid.hpp"
-#include "ai/common/path_conversion.hpp"
+#include "ai/common/executable_plan.hpp"
 #include "ai/common/reachable_search.hpp"
 
 namespace fb::ai::beam_tuned {
@@ -91,7 +91,7 @@ void ExpandOption(const BeamNode& node, const core::Mino& pieceToPlace, bool use
         } else {
             // この系統の1手目を今ここで決定する。
             if (usedHold) child.firstMove.push_back(PlayerMove::Hold);
-            std::vector<PlayerMove> converted = common::ConvertPath(placement.path);
+            std::vector<PlayerMove> converted = common::ToExecutablePlan(placement.path);
             child.firstMove.insert(child.firstMove.end(), converted.begin(), converted.end());
         }
 

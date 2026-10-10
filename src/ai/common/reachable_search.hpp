@@ -3,25 +3,18 @@
 #include <vector>
 
 #include "ai/common/occupancy_grid.hpp"
+#include "ai/player.hpp"
 #include "core/board.hpp"
 #include "core/mino.hpp"
 #include "core/types.hpp"
 
 namespace fb::ai::common {
 
-enum class MoveType {
-    Left,
-    Right,
-    Down,
-    RotateCW,
-    RotateCCW,
-};
-
 struct ReachablePlacement {
     int rotation = 0;
     core::Vec2i position{};
     std::vector<core::Vec2i> cells;  // ボード座標系(ワールド座標)での最終セル一覧
-    std::vector<MoveType> path;
+    std::vector<PlayerMove> path;  // スポーン位置からの操作(Left/Right/Down/RotateCW/RotateCCWのみ)
 };
 
 // grid上でmino(spawnRotation, spawnPositionから開始)が、実際の移動・回転

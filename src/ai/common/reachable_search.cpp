@@ -55,11 +55,11 @@ std::vector<ReachablePlacement> SearchReachablePlacements(const OccupancyGrid& g
     StateSpace space(grid.Width(), grid.TotalHeight(), mino.gridSize);
     std::vector<bool> visited(static_cast<std::size_t>(space.Size()), false);
     std::vector<int> parent(static_cast<std::size_t>(space.Size()), -1);
-    std::vector<MoveType> moveFromParent(static_cast<std::size_t>(space.Size()));
+    std::vector<PlayerMove> moveFromParent(static_cast<std::size_t>(space.Size()));
 
     // 終端状態から親を辿って、そこまでの手順を復元する。
     auto reconstructPath = [&](int index) {
-        std::vector<MoveType> path;
+        std::vector<PlayerMove> path;
         while (parent[index] != -1) {
             path.push_back(moveFromParent[index]);
             index = parent[index];
@@ -83,14 +83,14 @@ std::vector<ReachablePlacement> SearchReachablePlacements(const OccupancyGrid& g
         const std::vector<core::Vec2i>& cells = mino.GetCells(current.rotation);
         int currentIndex = space.Index(current);
 
-        auto tryVisit = [&](core::Vec2i newPos, int newRotation, MoveType moveType) {
+        auto tryVisit = [&](core::Vec2i newPos, int newRotation, PlayerMove move) {
             State next{newRotation, newPos.x, newPos.y};
             int nextIndex = space.Index(next);
             if (visited[nextIndex]) return;
 
             visited[nextIndex] = true;
             parent[nextIndex] = currentIndex;
-            moveFromParent[nextIndex] = moveType;
+            moveFromParent[nextIndex] = move;
             pending.push(next);
         };
 
@@ -104,8 +104,8 @@ std::vector<ReachablePlacement> SearchReachablePlacements(const OccupancyGrid& g
             for (const auto& kick : kicks) {
                 core::Vec2i newPos = pos + kick;
                 if (grid.IsValidPosition(newCells, newPos)) {
-                    MoveType moveType = (dir == 1) ? MoveType::RotateCW : MoveType::RotateCCW;
-                    tryVisit(newPos, newRotation, moveType);
+                    PlayerMove move = (dir == 1) ? PlayerMove::RotateCW : PlayerMove::RotateCCW;
+                    tryVisit(newPos, newRotation, move);
                     break;
                 }
             }
@@ -113,13 +113,13 @@ std::vector<ReachablePlacement> SearchReachablePlacements(const OccupancyGrid& g
 
         // 左右下への移動
         if (grid.IsValidPosition(cells, pos + core::Vec2i::Left())) {
-            tryVisit(pos + core::Vec2i::Left(), current.rotation, MoveType::Left);
+            tryVisit(pos + core::Vec2i::Left(), current.rotation, PlayerMove::Left);
         }
         if (grid.IsValidPosition(cells, pos + core::Vec2i::Right())) {
-            tryVisit(pos + core::Vec2i::Right(), current.rotation, MoveType::Right);
+            tryVisit(pos + core::Vec2i::Right(), current.rotation, PlayerMove::Right);
         }
         if (grid.IsValidPosition(cells, pos + core::Vec2i::Down())) {
-            tryVisit(pos + core::Vec2i::Down(), current.rotation, MoveType::Down);
+            tryVisit(pos + core::Vec2i::Down(), current.rotation, PlayerMove::Down);
         }
 
         // これ以上下に動けなければ「置ける場所」の候補として記録する

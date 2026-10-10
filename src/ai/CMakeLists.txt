@@ -4,7 +4,7 @@ add_library(ai STATIC
     common/occupancy_grid.cpp
     common/reachable_search.cpp
     common/move_execution.cpp
-    common/path_conversion.cpp
+    common/executable_plan.cpp
     simple/placement.cpp
     simple/evaluator.cpp
     simple/simple_player.cpp
