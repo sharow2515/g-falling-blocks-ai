@@ -1,6 +1,5 @@
 #include <cmath>
 #include <cstdint>
-#include <cstdlib>
 #include <fstream>
 #include <iostream>
 #include <memory>
@@ -12,6 +11,8 @@
 #include "ai/factory.hpp"
 #include "ai/player.hpp"
 #include "benchmark/runner.hpp"
+#include "cli/arg_parser.hpp"
+#include "cli/common_options.hpp"
 #include "core/mino_loader.hpp"
 
 namespace {
@@ -20,40 +21,24 @@ struct Options {
     int games = 100;
     std::uint64_t seedStart = 1;
     int maxLines = 500;
-    std::string minosJsonPath = "assets/minos_hard.json";
-    std::string aiName = "simple";
-    int beamWidth = 20;
-    int beamDepth = 2;
+    std::string minosJsonPath = fb::cli::kHardMinosJsonPath;
+    fb::ai::AiOptions ai;
     std::string outputCsvPath;  // 空文字ならCSV出力しない
-    std::optional<std::string> weightsArg;
 };
 
 Options ParseOptions(int argc, char** argv) {
     Options opts;
-    for (int i = 1; i < argc; ++i) {
-        std::string arg = argv[i];
-        if (arg == "--games" && i + 1 < argc) {
-            opts.games = std::atoi(argv[++i]);
-        } else if (arg == "--seed-start" && i + 1 < argc) {
-            opts.seedStart = static_cast<std::uint64_t>(std::atoll(argv[++i]));
-        } else if (arg == "--max-lines" && i + 1 < argc) {
-            opts.maxLines = std::atoi(argv[++i]);
-        } else if (arg == "--ai" && i + 1 < argc) {
-            opts.aiName = argv[++i];
-        } else if (arg == "--beam-width" && i + 1 < argc) {
-            opts.beamWidth = std::atoi(argv[++i]);
-        } else if (arg == "--beam-depth" && i + 1 < argc) {
-            opts.beamDepth = std::atoi(argv[++i]);
-        } else if (arg == "--easy") {
-            opts.minosJsonPath = "assets/minos_easy.json";
-        } else if (arg == "--hard") {
-            opts.minosJsonPath = "assets/minos_hard.json";
-        } else if (arg == "--output" && i + 1 < argc) {
-            opts.outputCsvPath = argv[++i];
-        } else if (arg == "--weights" && i + 1 < argc) {
-            opts.weightsArg = argv[++i];
-        }
-    }
+
+    fb::cli::ArgParser parser;
+    fb::cli::AddMinosOptions(parser, opts.minosJsonPath);
+    fb::cli::AddAiOptions(parser, opts.ai);
+    parser.AddValue("--games", [&opts](const std::string& value) { opts.games = fb::cli::ParseInt(value); });
+    parser.AddValue("--seed-start",
+                    [&opts](const std::string& value) { opts.seedStart = fb::cli::ParseUint64(value); });
+    parser.AddValue("--max-lines", [&opts](const std::string& value) { opts.maxLines = fb::cli::ParseInt(value); });
+    parser.AddValue("--output", [&opts](const std::string& value) { opts.outputCsvPath = value; });
+
+    parser.Parse(argc, argv);
     return opts;
 }
 
@@ -78,7 +63,7 @@ int main(int argc, char** argv) {
 
     std::unique_ptr<fb::ai::AiPlayer> player;
     try {
-        player = fb::ai::MakeAiPlayer({opts.aiName, opts.beamWidth, opts.beamDepth, opts.weightsArg});
+        player = fb::ai::MakeAiPlayer(opts.ai);
     } catch (const std::invalid_argument& e) {
         std::cerr << "AI設定が不正です: " << e.what() << "\n";
         return 1;
