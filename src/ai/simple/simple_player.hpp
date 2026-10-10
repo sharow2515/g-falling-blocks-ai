@@ -14,16 +14,11 @@ namespace fb::ai {
 // SFML等appへの依存はなく、core::Gameのコマンドだけを叩く。
 class SimplePlayer : public AiPlayer {
 public:
-    // 呼び出しごとに1回チェックし、新しいピースが出現していれば
-    // (Game::SpawnEventId()の変化で検知)最善手を1回だけ決定・実行する。
-    void Update(core::Game& game) override;
     std::vector<PlayerMove> Plan(core::Game& game) override;
     std::string Name() const override { return "Simple"; }
 
 private:
     std::vector<PlayerMove> BuildPlan(core::Game& game);
-
-    int lastSeenSpawnEventId_ = -1;
 };
 
 }  // namespace fb::ai

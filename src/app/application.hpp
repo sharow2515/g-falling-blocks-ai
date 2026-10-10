@@ -30,6 +30,7 @@ private:
     Renderer renderer_;
     std::unique_ptr<ai::AiPlayer> ai_;
     bool aiEnabled_ = false;
+    int lastAiSpawnEventId_ = -1;  // AIが手を打ったピースの SpawnEventId。現在値と同じならそのピースは操作済み
 
     std::optional<std::uint64_t> fixedSeed_;
 };

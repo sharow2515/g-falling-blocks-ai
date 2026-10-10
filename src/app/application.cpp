@@ -2,6 +2,7 @@
 
 #include <random>
 
+#include "ai/common/move_execution.hpp"
 #include "core/mino_loader.hpp"
 
 namespace fb::app {
@@ -52,8 +53,12 @@ int Application::Run() {
             game_.RestartGame(NextSeed());
         }
 
-        if (aiEnabled_) {
-            ai_->Update(game_);
+        // 新しいピースが出るたびに一度だけPlanの操作列を実行する
+        if (aiEnabled_ && game_.SpawnEventId() != lastAiSpawnEventId_) {
+            lastAiSpawnEventId_ = game_.SpawnEventId();
+            for (ai::PlayerMove move : ai_->Plan(game_)) {
+                ai::common::ExecuteMove(game_, move);
+            }
         }
 
         game_.Tick(dt);

@@ -1,24 +1,10 @@
 #include "ai/reachability/reachability_player.hpp"
 
-#include "ai/common/move_execution.hpp"
 #include "ai/common/path_conversion.hpp"
 #include "ai/common/reachable_search.hpp"
 #include "ai/reachability/evaluator.hpp"
 
 namespace fb::ai::reachability {
-
-void ReachabilityPlayer::Update(core::Game& game) {
-    int spawnId = game.SpawnEventId();
-    if (spawnId == lastSeenSpawnEventId_) return;
-    lastSeenSpawnEventId_ = spawnId;
-
-    // 判断から実行まで同期的に(1回のUpdate呼び出し内で)完結させる。
-    // この関数の実行中は core::Game::Tick() が絶対に挟まらないことが前提
-    // (呼ばれてしまうと自由落下で盤面がズレ、探索結果と実際の着地先が食い違う)。
-    for (PlayerMove move : BuildPlan(game)) {
-        common::ExecuteMove(game, move);
-    }
-}
 
 std::vector<PlayerMove> ReachabilityPlayer::Plan(core::Game& game) { return BuildPlan(game); }
 

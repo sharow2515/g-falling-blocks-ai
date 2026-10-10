@@ -1,6 +1,5 @@
 #include "ai/simple/simple_player.hpp"
 
-#include "ai/common/move_execution.hpp"
 #include "ai/simple/evaluator.hpp"
 #include "ai/simple/placement.hpp"
 #include "core/wall_kick.hpp"
@@ -32,16 +31,6 @@ RotationState ApplyRotationStep(const core::Board& board, const core::Mino& mino
 }
 
 }  // namespace
-
-void SimplePlayer::Update(core::Game& game) {
-    int spawnId = game.SpawnEventId();
-    if (spawnId == lastSeenSpawnEventId_) return;
-    lastSeenSpawnEventId_ = spawnId;
-
-    for (PlayerMove move : BuildPlan(game)) {
-        common::ExecuteMove(game, move);
-    }
-}
 
 std::vector<PlayerMove> SimplePlayer::Plan(core::Game& game) { return BuildPlan(game); }
 

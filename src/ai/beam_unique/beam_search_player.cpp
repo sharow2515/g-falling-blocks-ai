@@ -7,7 +7,6 @@
 #include <unordered_map>
 
 #include "ai/beam_unique/evaluator.hpp"
-#include "ai/common/move_execution.hpp"
 #include "ai/common/occupancy_grid.hpp"
 #include "ai/common/path_conversion.hpp"
 #include "ai/common/reachable_search.hpp"
@@ -183,16 +182,6 @@ BeamSearchPlayer::BeamSearchPlayer(int beamWidth, int searchDepth, Weights weigh
         throw std::invalid_argument("BeamSearchPlayer: searchDepthは0から" +
                                      std::to_string(kMaxSearchDepth) +
                                      "の範囲である必要があります(Next表示を超える先読みは不可)");
-    }
-}
-
-void BeamSearchPlayer::Update(core::Game& game) {
-    int spawnId = game.SpawnEventId();
-    if (spawnId == lastSeenSpawnEventId_) return;
-    lastSeenSpawnEventId_ = spawnId;
-
-    for (PlayerMove move : BuildPlan(game)) {
-        common::ExecuteMove(game, move);
     }
 }
 

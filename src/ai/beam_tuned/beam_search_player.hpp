@@ -17,7 +17,6 @@ class BeamSearchPlayer : public AiPlayer {
 public:
     BeamSearchPlayer(int beamWidth, int searchDepth, Weights weights = Weights{});
 
-    void Update(core::Game& game) override;
     std::vector<PlayerMove> Plan(core::Game& game) override;
     std::string Name() const override { return "BeamTuned"; }
 
@@ -27,7 +26,6 @@ private:
     int beamWidth_;
     int searchDepth_;
     Weights weights_;
-    int lastSeenSpawnEventId_ = -1;
 };
 
 }  // namespace fb::ai::beam_tuned
