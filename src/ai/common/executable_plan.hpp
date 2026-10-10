@@ -2,7 +2,7 @@
 
 #include <vector>
 
-#include "ai/player.hpp"
+#include "ai/player_move.hpp"
 
 namespace fb::ai::common {
 

@@ -3,7 +3,7 @@
 #include <vector>
 
 #include "ai/common/occupancy_grid.hpp"
-#include "ai/player.hpp"
+#include "ai/player_move.hpp"
 #include "core/board.hpp"
 #include "core/mino.hpp"
 #include "core/types.hpp"
