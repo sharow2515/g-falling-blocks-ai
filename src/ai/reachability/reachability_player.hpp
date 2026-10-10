@@ -8,8 +8,6 @@
 
 namespace fb::ai::reachability {
 
-// 実際の移動・回転(ウォールキック含む)で到達可能な全ての置き場所をBFSで探索し、
-// 評価関数で採点して最善のものを選ぶAI。
 class ReachabilityPlayer : public AiPlayer {
 public:
     std::vector<PlayerMove> Plan(const core::Game& game) override;
