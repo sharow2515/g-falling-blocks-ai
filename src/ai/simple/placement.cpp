@@ -1,60 +1,97 @@
 #include "ai/simple/placement.hpp"
 
-#include <limits>
+#include <optional>
+#include <utility>
+#include <vector>
+
+#include "core/wall_kick.hpp"
 
 namespace fb::ai {
 
 namespace {
 
-// cellsをxだけ水平移動した状態で落下させ、最終的なyを返す。
-// startYはcellsの最大y+startYがTotalHeight()-1に収まるよう呼び出し側で計算する。
-int DropY(const core::Board& board, const std::vector<core::Vec2i>& cells, int x, int startY) {
-    core::Vec2i pos{x, startY};
+struct PieceState {
+    int rotation;
+    core::Vec2i position;
+};
 
-    int guard = board.TotalHeight() * 2;
-    while (!board.IsValidPosition(cells, pos) && guard-- > 0) {
-        pos.y -= 1;
-    }
+// 試す回転の操作列。
+const std::vector<PlayerMove> kRotationSequences[] = {
+    {},
+    {PlayerMove::RotateCW},
+    {PlayerMove::RotateCCW},
+    {PlayerMove::RotateCW, PlayerMove::RotateCW},
+};
 
-    while (board.IsValidPosition(cells, pos + core::Vec2i::Down())) {
-        pos = pos + core::Vec2i::Down();
+// rotate(RotateCW / RotateCCW)で1回転させる。キックを順に試し、置ける最初の位置を採用する。
+std::optional<PieceState> TryRotate(const core::Board& board, const core::Mino& mino, PieceState state,
+                                    PlayerMove rotate) {
+    int direction = rotate == PlayerMove::RotateCW ? 1 : -1;
+    int newRotation = ((state.rotation + direction) % 4 + 4) % 4;
+    const std::vector<core::Vec2i>& newCells = mino.GetCells(newRotation);
+
+    core::KickTableType kickType = core::SelectKickTable(mino.name, mino.gridSize);
+    for (const auto& kick : core::GetWallKicks(kickType, state.rotation, newRotation)) {
+        core::Vec2i newPos = state.position + kick;
+        if (board.IsValidPosition(newCells, newPos)) return PieceState{newRotation, newPos};
     }
-    return pos.y;
+    return std::nullopt;
+}
+
+// rotationsを順に当てはめる
+std::optional<PieceState> ApplyRotations(const core::Board& board, const core::Mino& mino, PieceState state,
+                                         const std::vector<PlayerMove>& rotations) {
+    for (PlayerMove rotate : rotations) {
+        std::optional<PieceState> next = TryRotate(board, mino, state, rotate);
+        if (!next) return std::nullopt;
+        state = *next;
+    }
+    return state;
+}
+
+core::Vec2i DropToBottom(const core::Board& board, const std::vector<core::Vec2i>& cells, core::Vec2i position) {
+    while (board.IsValidPosition(cells, position + core::Vec2i::Down())) {
+        position = position + core::Vec2i::Down();
+    }
+    return position;
 }
 
 }  // namespace
 
-std::vector<Placement> EnumeratePlacements(const core::Board& board, const core::Mino& mino) {
+std::vector<Placement> EnumerateReachablePlacements(const core::Board& board, const core::Mino& mino,
+                                                    int spawnRotation, core::Vec2i spawnPosition) {
     std::vector<Placement> placements;
 
-    for (int rotation = 0; rotation < 4; ++rotation) {
-        const std::vector<core::Vec2i>& cells = mino.GetCells(rotation);
+    for (const std::vector<PlayerMove>& rotations : kRotationSequences) {
+        std::optional<PieceState> rotated = ApplyRotations(board, mino, {spawnRotation, spawnPosition}, rotations);
+        if (!rotated) continue;
 
-        int minX = std::numeric_limits<int>::max();
-        int maxX = std::numeric_limits<int>::min();
-        int maxY = std::numeric_limits<int>::min();
-        for (const auto& c : cells) {
-            minX = std::min(minX, c.x);
-            maxX = std::max(maxX, c.x);
-            maxY = std::max(maxY, c.y);
-        }
+        const std::vector<core::Vec2i>& cells = mino.GetCells(rotated->rotation);
 
-        int startY = board.TotalHeight() - 1 - maxY;
-        int xLow = -minX;
-        int xHigh = board.Width() - 1 - maxX;
+        // pos(回転後に、左右移動した位置)から落として、候補に加える。
+        auto addPlacement = [&](core::Vec2i pos, std::vector<PlayerMove> moves) {
+            core::Vec2i landed = DropToBottom(board, cells, pos);
+            Placement placement;
+            placement.cells.reserve(cells.size());
+            for (const auto& c : cells) placement.cells.push_back(c + landed);
+            placement.moves = std::move(moves);
+            placement.moves.push_back(PlayerMove::HardDrop);
+            placements.push_back(std::move(placement));
+        };
 
-        for (int x = xLow; x <= xHigh; ++x) {
-            int y = DropY(board, cells, x, startY);
-            core::Vec2i pos{x, y};
-            if (!board.IsValidPosition(cells, pos)) continue;
+        // 左右移動なし
+        addPlacement(rotated->position, rotations);
 
-            Placement p;
-            p.rotation = rotation;
-            p.x = x;
-            p.y = y;
-            p.cells.reserve(cells.size());
-            for (const auto& c : cells) p.cells.push_back(c + pos);
-            placements.push_back(std::move(p));
+        // 左右移動
+        for (PlayerMove slide : {PlayerMove::Left, PlayerMove::Right}) {
+            core::Vec2i step = slide == PlayerMove::Left ? core::Vec2i::Left() : core::Vec2i::Right();
+            std::vector<PlayerMove> moves = rotations;
+            core::Vec2i pos = rotated->position;
+            while (board.IsValidPosition(cells, pos + step)) {
+                pos = pos + step;
+                moves.push_back(slide);
+                addPlacement(pos, moves);
+            }
         }
     }
 

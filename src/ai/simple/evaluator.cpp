@@ -1,42 +1,29 @@
 #include "ai/simple/evaluator.hpp"
 
 #include <limits>
+#include <vector>
 
 #include "ai/common/board_features.hpp"
 #include "ai/common/occupancy_grid.hpp"
 
 namespace fb::ai {
 
-double Evaluate(const SimpleFeatures& f) {
-    if (f.causesGameOver) return -std::numeric_limits<double>::infinity();
-
-    return -1.0 * f.landingHeight + 1.0 * f.erodedPieceCells - 1.0 * f.rowTransitions -
-           1.0 * f.columnTransitions - 4.0 * f.holes - 1.0 * f.cumulativeWells;
-}
-
-SimpleFeatures ComputeFeatures(core::Board board, const Placement& placement, core::Color color) {
-    SimpleFeatures f;
-    f.landingHeight = common::ComputeLandingHeight(placement.cells);
-
-    board.PlacePiece(placement.cells, core::Vec2i{0, 0}, color);
+double ScorePlacement(const core::Board& board, const Placement& placement) {
+    core::Board after = board;
+    after.PlacePiece(placement.cells, core::Vec2i{0, 0}, core::Color{});  // 色は採点に使わない
 
     std::vector<int> clearedRows;
-    board.ClearFullLines(clearedRows);
+    after.ClearFullLines(clearedRows);
 
-    f.erodedPieceCells = common::ComputeErodedPieceCells(placement.cells, clearedRows);
+    if (after.IsGameOver()) return -std::numeric_limits<double>::infinity();
 
-    common::OccupancyGrid grid(board);
-    f.holes = common::CountHoles(grid);
-    f.rowTransitions = common::CountRowTransitions(grid);
-    f.columnTransitions = common::CountColumnTransitions(grid);
-    f.cumulativeWells = common::CountCumulativeWells(grid);
-    f.causesGameOver = board.IsGameOver();
+    const common::OccupancyGrid grid(after);
+    const double landingHeight = common::ComputeLandingHeight(placement.cells);
+    const double erodedPieceCells = common::ComputeErodedPieceCells(placement.cells, clearedRows);
 
-    return f;
-}
-
-double ScorePlacement(const core::Board& board, const Placement& placement, core::Color color) {
-    return Evaluate(ComputeFeatures(board, placement, color));
+    return -1.0 * landingHeight + 1.0 * erodedPieceCells - 1.0 * common::CountRowTransitions(grid) -
+           1.0 * common::CountColumnTransitions(grid) - 4.0 * common::CountHoles(grid) -
+           1.0 * common::CountCumulativeWells(grid);
 }
 
 }  // namespace fb::ai
