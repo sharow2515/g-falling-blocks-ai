@@ -1,145 +1,72 @@
-#include <cstdlib>
 #include <cstdint>
 #include <iostream>
 #include <memory>
 #include <optional>
+#include <stdexcept>
 #include <string>
 
-#include "ai/beam/beam_search_player.hpp"
-#include "ai/beam/evaluator.hpp"
-#include "ai/beam_tuned/beam_search_player.hpp"
-#include "ai/beam_tuned/evaluator.hpp"
-#include "ai/beam_unique/beam_search_player.hpp"
-#include "ai/beam_unique/evaluator.hpp"
-#include "ai/player.hpp"
-#include "ai/reachability/reachability_player.hpp"
-#include "ai/simple/simple_player.hpp"
+#include "ai/factory.hpp"
 #include "app/ai_visualize_application.hpp"
-#include "app/application.hpp"
+#include "app/human_play_application.hpp"
+#include "cli/arg_parser.hpp"
+#include "cli/common_options.hpp"
 
 namespace {
 
-// --easy: 7種(minos_easy.json)。指定なし/--hard: 全20種(minos_hard.json、デフォルト)。
-std::string ResolveMinosJsonPath(int argc, char** argv) {
-    for (int i = 1; i < argc; ++i) {
-        std::string arg = argv[i];
-        if (arg == "--easy") return "assets/minos_easy.json";
-        if (arg == "--hard") return "assets/minos_hard.json";
-    }
-    return "assets/minos_hard.json";
-}
+struct Options {
+    std::string minosJsonPath = fb::cli::kHardMinosJsonPath;
+    std::optional<std::uint64_t> seed;
+    bool visualize = false; // AIの操作を表示するモードにするか
+    float aiDelay = 0.3f;
+    fb::ai::AiOptions ai;
+    std::optional<std::string> firstAiOption;
+};
 
-int ResolveIntOption(int argc, char** argv, const std::string& flag, int defaultValue) {
-    for (int i = 1; i < argc; ++i) {
-        if (std::string(argv[i]) == flag && i + 1 < argc) {
-            return std::atoi(argv[++i]);
-        }
-    }
-    return defaultValue;
-}
+Options ParseOptions(int argc, char** argv) {
+    Options opts;
 
-std::optional<std::string> ResolveStringOption(int argc, char** argv, const std::string& flag) {
-    for (int i = 1; i < argc; ++i) {
-        if (std::string(argv[i]) == flag && i + 1 < argc) {
-            return std::string(argv[++i]);
-        }
-    }
-    return std::nullopt;
-}
+    fb::cli::ArgParser parser;
+    fb::cli::AddMinosOptions(parser, opts.minosJsonPath);
+    fb::cli::AddAiOptions(parser, opts.ai, &opts.firstAiOption);
+    parser.AddFlag("--visualize", [&opts] { opts.visualize = true; });
+    parser.AddValue("--seed", [&opts](const std::string& value) { opts.seed = fb::cli::ParseUint64(value); });
+    parser.AddValue("--ai-delay", [&opts](const std::string& value) {
+        if (!opts.firstAiOption) opts.firstAiOption = "--ai-delay";
+        opts.aiDelay = fb::cli::ParseFloat(value);
+    });
 
-// --ai simple(デフォルト) / --ai reachability / --ai beam / --ai beam_tuned
-//   (beam/beam_tunedは --beam-width N / --beam-depth N (0〜5) / --weights を追加指定可能。
-//    --weightsの個数はai::beam::Weights/ai::beam_tuned::Weightsの次元数と同じ)。
-std::unique_ptr<fb::ai::AiPlayer> ResolveAiPlayer(int argc, char** argv) {
-    std::string name = "simple";
-    for (int i = 1; i < argc; ++i) {
-        std::string arg = argv[i];
-        if (arg == "--ai" && i + 1 < argc) {
-            name = argv[++i];
-            break;
-        }
-    }
-
-    if (name == "reachability") return std::make_unique<fb::ai::reachability::ReachabilityPlayer>();
-    if (name == "beam") {
-        int beamWidth = ResolveIntOption(argc, argv, "--beam-width", 20);
-        int beamDepth = ResolveIntOption(argc, argv, "--beam-depth", 2);
-        fb::ai::beam::Weights weights;
-        if (auto arg = ResolveStringOption(argc, argv, "--weights")) {
-            weights = fb::ai::beam::ParseWeights(*arg);
-        }
-        return std::make_unique<fb::ai::beam::BeamSearchPlayer>(beamWidth, beamDepth, weights);
-    }
-    if (name == "beam_tuned") {
-        int beamWidth = ResolveIntOption(argc, argv, "--beam-width", 20);
-        int beamDepth = ResolveIntOption(argc, argv, "--beam-depth", 2);
-        fb::ai::beam_tuned::Weights weights;
-        if (auto arg = ResolveStringOption(argc, argv, "--weights")) {
-            weights = fb::ai::beam_tuned::ParseWeights(*arg);
-        }
-        return std::make_unique<fb::ai::beam_tuned::BeamSearchPlayer>(beamWidth, beamDepth, weights);
-    }
-    if (name == "beam_unique") {
-        int beamWidth = ResolveIntOption(argc, argv, "--beam-width", 20);
-        int beamDepth = ResolveIntOption(argc, argv, "--beam-depth", 2);
-        fb::ai::beam_unique::Weights weights;
-        if (auto arg = ResolveStringOption(argc, argv, "--weights")) {
-            weights = fb::ai::beam_unique::ParseWeights(*arg);
-        }
-        return std::make_unique<fb::ai::beam_unique::BeamSearchPlayer>(beamWidth, beamDepth, weights);
-    }
-    return std::make_unique<fb::ai::SimplePlayer>();
-}
-
-// --visualize: 人間操作を持たない、AI観戦専用モードで起動する。
-bool HasVisualizeFlag(int argc, char** argv) {
-    for (int i = 1; i < argc; ++i) {
-        if (std::string(argv[i]) == "--visualize") return true;
-    }
-    return false;
-}
-
-// --ai-delay N: visualizeモードで1操作ごとに置く間隔の秒数。
-float ResolveAiDelay(int argc, char** argv) {
-    for (int i = 1; i < argc; ++i) {
-        std::string arg = argv[i];
-        if (arg == "--ai-delay" && i + 1 < argc) {
-            return static_cast<float>(std::atof(argv[++i]));
-        }
-    }
-    return 0.3f;
-}
-
-// --seed N: ミノの出現列を固定する(Restartでも同じシードを使い直す)。未指定ならランダム。
-std::optional<std::uint64_t> ResolveSeed(int argc, char** argv) {
-    for (int i = 1; i < argc; ++i) {
-        std::string arg = argv[i];
-        if (arg == "--seed" && i + 1 < argc) {
-            return static_cast<std::uint64_t>(std::atoll(argv[++i]));
-        }
-    }
-    return std::nullopt;
+    parser.Parse(argc, argv);
+    return opts;
 }
 
 }  // namespace
 
 int main(int argc, char** argv) {
-    std::string minosJsonPath = ResolveMinosJsonPath(argc, argv);
-    std::optional<std::uint64_t> seed = ResolveSeed(argc, argv);
+    Options opts;
+    try {
+        opts = ParseOptions(argc, argv);
+    } catch (const std::invalid_argument& e) {
+        std::cerr << "引数が不正です: " << e.what() << "\n";
+        return 1;
+    }
+
+    if (!opts.visualize) {
+        if (opts.firstAiOption) {
+            std::cerr << *opts.firstAiOption << " は --visualize と一緒に指定してください\n";
+            return 1;
+        }
+        fb::app::HumanPlayApplication app(opts.minosJsonPath, opts.seed);
+        return app.Run();
+    }
 
     std::unique_ptr<fb::ai::AiPlayer> aiPlayer;
     try {
-        aiPlayer = ResolveAiPlayer(argc, argv);
+        aiPlayer = fb::ai::MakeAiPlayer(opts.ai);
     } catch (const std::invalid_argument& e) {
         std::cerr << "AI設定が不正です: " << e.what() << "\n";
         return 1;
     }
 
-    if (HasVisualizeFlag(argc, argv)) {
-        fb::app::AiVisualizeApplication app(minosJsonPath, std::move(aiPlayer), ResolveAiDelay(argc, argv), seed);
-        return app.Run();
-    }
-
-    fb::app::Application app(minosJsonPath, std::move(aiPlayer), seed);
+    fb::app::AiVisualizeApplication app(opts.minosJsonPath, std::move(aiPlayer), opts.aiDelay, opts.seed);
     return app.Run();
 }

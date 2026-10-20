@@ -11,17 +11,16 @@ class InputController {
 public:
     // 毎フレーム呼び出し、DAS/ARRを進めてcore::Gameへコマンドを発行する。
     // controlPiece=false の間は移動・回転・ソフト/ハードドロップ・ホールドを発行しない
-    // (AI操作時に人間の入力とAIの入力が競合しないようにするため)。
-    // Pause/Restart/ToggleAiキーはcontrolPieceの値に関わらず常に処理する。
-    void Update(core::Game& game, float dt, bool controlPiece = true);
+    // (AIが操作するモードで人間の入力と競合しないようにするため)。
+    // Pause/RestartキーはcontrolPieceの値に関わらず常に処理する。
+    void Update(core::Game& game, float deltaSeconds, bool controlPiece = true);
 
     [[nodiscard]] bool ConsumeRestartRequested();
-    [[nodiscard]] bool ConsumeToggleAiRequested();
 
 private:
     [[nodiscard]] bool WasPressedThisFrame(KeyAction action) const;
     [[nodiscard]] bool IsPressed(KeyAction action) const;
-    void HandleHorizontalMovement(core::Game& game, float dt);
+    void HandleHorizontalMovement(core::Game& game, float deltaSeconds);
     void ResetDasArrIfNewPiece(const core::Game& game);
 
     static constexpr std::size_t kActionCount = static_cast<std::size_t>(KeyAction::Count);
@@ -41,7 +40,6 @@ private:
     int lastSeenSpawnEventId_ = -1;
 
     bool restartRequested_ = false;
-    bool toggleAiRequested_ = false;
 };
 
 }  // namespace fb::app

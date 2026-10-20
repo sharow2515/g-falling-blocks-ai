@@ -1,6 +1,5 @@
 #include <cmath>
 #include <cstdint>
-#include <cstdlib>
 #include <fstream>
 #include <iostream>
 #include <memory>
@@ -9,16 +8,11 @@
 #include <string>
 #include <vector>
 
-#include "ai/beam/beam_search_player.hpp"
-#include "ai/beam/evaluator.hpp"
-#include "ai/beam_tuned/beam_search_player.hpp"
-#include "ai/beam_tuned/evaluator.hpp"
-#include "ai/beam_unique/beam_search_player.hpp"
-#include "ai/beam_unique/evaluator.hpp"
+#include "ai/factory.hpp"
 #include "ai/player.hpp"
-#include "ai/reachability/reachability_player.hpp"
-#include "ai/simple/simple_player.hpp"
 #include "benchmark/runner.hpp"
+#include "cli/arg_parser.hpp"
+#include "cli/common_options.hpp"
 #include "core/mino_loader.hpp"
 
 namespace {
@@ -27,61 +21,25 @@ struct Options {
     int games = 100;
     std::uint64_t seedStart = 1;
     int maxLines = 500;
-    std::string minosJsonPath = "assets/minos_hard.json";
-    std::string aiName = "simple";  // "simple" | "reachability" | "beam" | "beam_tuned"
-    int beamWidth = 20;
-    int beamDepth = 2;
+    std::string minosJsonPath = fb::cli::kHardMinosJsonPath;
+    fb::ai::AiOptions ai;
     std::string outputCsvPath;  // 空文字ならCSV出力しない
-    std::optional<std::string> weightsArg;  // --ai beam/beam_tuned のときのみ使用。未指定ならデフォルト重み
 };
 
 Options ParseOptions(int argc, char** argv) {
     Options opts;
-    for (int i = 1; i < argc; ++i) {
-        std::string arg = argv[i];
-        if (arg == "--games" && i + 1 < argc) {
-            opts.games = std::atoi(argv[++i]);
-        } else if (arg == "--seed-start" && i + 1 < argc) {
-            opts.seedStart = static_cast<std::uint64_t>(std::atoll(argv[++i]));
-        } else if (arg == "--max-lines" && i + 1 < argc) {
-            opts.maxLines = std::atoi(argv[++i]);
-        } else if (arg == "--ai" && i + 1 < argc) {
-            opts.aiName = argv[++i];
-        } else if (arg == "--beam-width" && i + 1 < argc) {
-            opts.beamWidth = std::atoi(argv[++i]);
-        } else if (arg == "--beam-depth" && i + 1 < argc) {
-            opts.beamDepth = std::atoi(argv[++i]);
-        } else if (arg == "--easy") {
-            opts.minosJsonPath = "assets/minos_easy.json";
-        } else if (arg == "--hard") {
-            opts.minosJsonPath = "assets/minos_hard.json";
-        } else if (arg == "--output" && i + 1 < argc) {
-            opts.outputCsvPath = argv[++i];
-        } else if (arg == "--weights" && i + 1 < argc) {
-            opts.weightsArg = argv[++i];
-        }
-    }
-    return opts;
-}
 
-std::unique_ptr<fb::ai::AiPlayer> MakePlayer(const Options& opts) {
-    if (opts.aiName == "reachability") return std::make_unique<fb::ai::reachability::ReachabilityPlayer>();
-    if (opts.aiName == "beam") {
-        fb::ai::beam::Weights weights;
-        if (opts.weightsArg) weights = fb::ai::beam::ParseWeights(*opts.weightsArg);
-        return std::make_unique<fb::ai::beam::BeamSearchPlayer>(opts.beamWidth, opts.beamDepth, weights);
-    }
-    if (opts.aiName == "beam_tuned") {
-        fb::ai::beam_tuned::Weights weights;
-        if (opts.weightsArg) weights = fb::ai::beam_tuned::ParseWeights(*opts.weightsArg);
-        return std::make_unique<fb::ai::beam_tuned::BeamSearchPlayer>(opts.beamWidth, opts.beamDepth, weights);
-    }
-    if (opts.aiName == "beam_unique") {
-        fb::ai::beam_unique::Weights weights;
-        if (opts.weightsArg) weights = fb::ai::beam_unique::ParseWeights(*opts.weightsArg);
-        return std::make_unique<fb::ai::beam_unique::BeamSearchPlayer>(opts.beamWidth, opts.beamDepth, weights);
-    }
-    return std::make_unique<fb::ai::SimplePlayer>();
+    fb::cli::ArgParser parser;
+    fb::cli::AddMinosOptions(parser, opts.minosJsonPath);
+    fb::cli::AddAiOptions(parser, opts.ai);
+    parser.AddValue("--games", [&opts](const std::string& value) { opts.games = fb::cli::ParseInt(value); });
+    parser.AddValue("--seed-start",
+                    [&opts](const std::string& value) { opts.seedStart = fb::cli::ParseUint64(value); });
+    parser.AddValue("--max-lines", [&opts](const std::string& value) { opts.maxLines = fb::cli::ParseInt(value); });
+    parser.AddValue("--output", [&opts](const std::string& value) { opts.outputCsvPath = value; });
+
+    parser.Parse(argc, argv);
+    return opts;
 }
 
 }  // namespace
@@ -105,7 +63,7 @@ int main(int argc, char** argv) {
 
     std::unique_ptr<fb::ai::AiPlayer> player;
     try {
-        player = MakePlayer(opts);
+        player = fb::ai::MakeAiPlayer(opts.ai);
     } catch (const std::invalid_argument& e) {
         std::cerr << "AI設定が不正です: " << e.what() << "\n";
         return 1;

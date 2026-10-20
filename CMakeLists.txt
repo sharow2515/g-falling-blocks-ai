@@ -13,24 +13,25 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
 endif()
 
 find_package(SFML 3 COMPONENTS Graphics Window System REQUIRED)
-find_package(OpenMP REQUIRED)
 
 add_subdirectory(src/core)
 add_subdirectory(src/ai)
+add_subdirectory(src/cli)
 
 add_executable(FallingBlocks
     src/main.cpp
     src/app/input_controller.cpp
     src/app/renderer.cpp
-    src/app/application.cpp
+    src/app/application_base.cpp
+    src/app/human_play_application.cpp
     src/app/ai_visualize_application.cpp
 )
-target_link_libraries(FallingBlocks PRIVATE core ai SFML::Graphics SFML::Window SFML::System)
+target_link_libraries(FallingBlocks PRIVATE core ai cli SFML::Graphics SFML::Window SFML::System)
 target_include_directories(FallingBlocks PRIVATE src)
 
 add_executable(Benchmark
     src/benchmark/benchmark_main.cpp
     src/benchmark/runner.cpp
 )
-target_link_libraries(Benchmark PRIVATE core ai)
+target_link_libraries(Benchmark PRIVATE core ai cli)
 target_include_directories(Benchmark PRIVATE src)

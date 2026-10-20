@@ -187,14 +187,14 @@ void Renderer::DrawGameOverOverlay(sf::RenderWindow& window, const core::Game& g
     DrawText(window, "Press R to restart", center + sf::Vector2f{0.f, 76.f}, 16, sf::Color(200, 200, 200));
 }
 
-void Renderer::UpdateLineClearFlash(const core::Game& game, float dt) {
+void Renderer::UpdateLineClearFlash(const core::Game& game, float deltaSeconds) {
     int id = game.ClearEventId();
     if (id != lastSeenClearEventId_) {
         lastSeenClearEventId_ = id;
         flashRows_ = game.LastClearedRows();
         flashTimer_ = kFlashDuration;
     } else if (flashTimer_ > 0.f) {
-        flashTimer_ = std::max(0.f, flashTimer_ - dt);
+        flashTimer_ = std::max(0.f, flashTimer_ - deltaSeconds);
     }
 }
 
@@ -214,8 +214,8 @@ void Renderer::DrawLineClearFlash(sf::RenderWindow& window, const core::Board& b
     }
 }
 
-void Renderer::Draw(sf::RenderWindow& window, const core::Game& game, float dt) {
-    UpdateLineClearFlash(game, dt);
+void Renderer::Draw(sf::RenderWindow& window, const core::Game& game, float deltaSeconds) {
+    UpdateLineClearFlash(game, deltaSeconds);
 
     DrawBoard(window, game.GetBoard());
     DrawLineClearFlash(window, game.GetBoard());

@@ -12,7 +12,7 @@ class Renderer {
 public:
     explicit Renderer(float cellSize = 28.f);
 
-    void Draw(sf::RenderWindow& window, const core::Game& game, float dt);
+    void Draw(sf::RenderWindow& window, const core::Game& game, float deltaSeconds);
 
 private:
     void DrawBoard(sf::RenderWindow& window, const core::Board& board);
@@ -28,7 +28,7 @@ private:
     void DrawText(sf::RenderWindow& window, const std::string& text, sf::Vector2f pos, unsigned int charSize,
                   sf::Color color);
 
-    void UpdateLineClearFlash(const core::Game& game, float dt);
+    void UpdateLineClearFlash(const core::Game& game, float deltaSeconds);
     void DrawLineClearFlash(sf::RenderWindow& window, const core::Board& board);
 
     [[nodiscard]] sf::Vector2f BoardToScreen(core::Vec2i boardPos, const core::Board& board) const;

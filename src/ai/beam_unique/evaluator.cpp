@@ -1,13 +1,41 @@
 #include "ai/beam_unique/evaluator.hpp"
 
+#include <cmath>
 #include <limits>
-#include <sstream>
 #include <stdexcept>
 
 #include "ai/common/board_features.hpp"
 #include "ai/common/occupancy_grid.hpp"
 
 namespace fb::ai::beam_unique {
+
+namespace {
+
+std::vector<std::string> SplitByComma(const std::string& text) {
+    std::vector<std::string> tokens;
+    std::size_t start = 0;
+    while (true) {
+        std::size_t comma = text.find(',', start);
+        if (comma == std::string::npos) {
+            tokens.push_back(text.substr(start));
+            return tokens;
+        }
+        tokens.push_back(text.substr(start, comma - start));
+        start = comma + 1;
+    }
+}
+
+double ParseDouble(const std::string& token) {
+    std::size_t pos = 0;
+    try {
+        double value = std::stod(token, &pos);
+        if (pos == token.size() && std::isfinite(value)) return value;
+    } catch (const std::exception&) {
+    }
+    throw std::invalid_argument("数値ではありません: '" + token + "'");
+}
+
+}  // namespace
 
 double Evaluate(const Features& f, const Weights& w) {
     if (f.causesGameOver) return -std::numeric_limits<double>::infinity();
@@ -19,14 +47,18 @@ double Evaluate(const Features& f, const Weights& w) {
 }
 
 Weights ParseWeights(const std::string& arg) {
-    std::vector<double> values;
-    std::stringstream ss(arg);
-    std::string token;
-    while (std::getline(ss, token, ',')) {
-        values.push_back(std::stod(token));
-    }
-    if (values.size() != 9) {
+    const std::vector<std::string> tokens = SplitByComma(arg);
+    if (tokens.size() != 9) {
         throw std::invalid_argument("--weightsは9個のカンマ区切り数値である必要があります: " + arg);
+    }
+
+    std::vector<double> values;
+    for (std::size_t i = 0; i < tokens.size(); ++i) {
+        try {
+            values.push_back(ParseDouble(tokens[i]));
+        } catch (const std::invalid_argument& e) {
+            throw std::invalid_argument("--weightsの" + std::to_string(i + 1) + "番目が不正です: " + e.what());
+        }
     }
 
     Weights weights;

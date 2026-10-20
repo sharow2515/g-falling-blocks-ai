@@ -7,36 +7,22 @@
 
 namespace fb::ai::reachability {
 
-double Evaluate(const Features& f) {
-    if (f.causesGameOver) return -std::numeric_limits<double>::infinity();
-
-    return -1.0 * f.landingHeight + 1.0 * f.erodedPieceCells - 1.0 * f.rowTransitions -
-           1.0 * f.columnTransitions - 4.0 * f.holes - 1.0 * f.cumulativeWells;
-}
-
-Features ComputeFeatures(core::Board board, const std::vector<core::Vec2i>& cells, core::Color color) {
-    Features f;
-    f.landingHeight = common::ComputeLandingHeight(cells);
-
-    board.PlacePiece(cells, core::Vec2i{0, 0}, color);
+double ScorePlacement(const core::Board& board, const std::vector<core::Vec2i>& cells) {
+    core::Board after = board;
+    after.PlacePiece(cells, core::Vec2i{0, 0}, core::Color{});  // 色は採点に使わない
 
     std::vector<int> clearedRows;
-    board.ClearFullLines(clearedRows);
+    after.ClearFullLines(clearedRows);
 
-    f.erodedPieceCells = common::ComputeErodedPieceCells(cells, clearedRows);
+    if (after.IsGameOver()) return -std::numeric_limits<double>::infinity();
 
-    common::OccupancyGrid grid(board);
-    f.holes = common::CountHoles(grid);
-    f.rowTransitions = common::CountRowTransitions(grid);
-    f.columnTransitions = common::CountColumnTransitions(grid);
-    f.cumulativeWells = common::CountCumulativeWells(grid);
-    f.causesGameOver = board.IsGameOver();
+    const common::OccupancyGrid grid(after);
+    const double landingHeight = common::ComputeLandingHeight(cells);
+    const double erodedPieceCells = common::ComputeErodedPieceCells(cells, clearedRows);
 
-    return f;
-}
-
-double ScorePlacement(const core::Board& board, const std::vector<core::Vec2i>& cells, core::Color color) {
-    return Evaluate(ComputeFeatures(board, cells, color));
+    return -1.0 * landingHeight + 1.0 * erodedPieceCells - 1.0 * common::CountRowTransitions(grid) -
+           1.0 * common::CountColumnTransitions(grid) - 4.0 * common::CountHoles(grid) -
+           1.0 * common::CountCumulativeWells(grid);
 }
 
 }  // namespace fb::ai::reachability

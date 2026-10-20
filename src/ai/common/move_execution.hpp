@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ai/player.hpp"
+#include "ai/player_move.hpp"
 #include "core/game.hpp"
 
 namespace fb::ai::common {
