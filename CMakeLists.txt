@@ -13,7 +13,6 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
 endif()
 
 find_package(SFML 3 COMPONENTS Graphics Window System REQUIRED)
-find_package(OpenMP REQUIRED)
 
 add_subdirectory(src/core)
 add_subdirectory(src/ai)

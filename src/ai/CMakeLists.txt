@@ -19,5 +19,5 @@ add_library(ai STATIC
     beam_unique/beam_search_player.cpp
 )
 
-target_link_libraries(ai PUBLIC core OpenMP::OpenMP_CXX)
+target_link_libraries(ai PUBLIC core)
 target_include_directories(ai PUBLIC ${CMAKE_SOURCE_DIR}/src)
