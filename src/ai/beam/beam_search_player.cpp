@@ -16,7 +16,7 @@ namespace {
 struct BeamNode {
     common::OccupancyGrid board;
     double score = 0.0;
-    std::vector<PlayerMove> rootPlan;  // 探索の起点で実際に実行する操作列(Holdを含む)。空 = まだ未決定。
+    std::vector<PlayerMove> rootPlan;
     const core::Mino* holdMino = nullptr;
     int nextPieceIndex = 0;
 };
@@ -25,7 +25,7 @@ void ExpandOption(const BeamNode& node, const core::Mino& pieceToPlace, bool use
                   const core::Mino* newHoldMino, int newNextPieceIndex, const Weights& weights,
                   std::vector<BeamNode>& out) {
     std::optional<common::SpawnState> spawn = common::ComputeSpawnState(node.board, pieceToPlace);
-    if (!spawn.has_value()) return;  // このピースはこの盤面には出現できない(手詰まり)
+    if (!spawn.has_value()) return; // ピースが出現できない
 
     std::vector<common::ReachablePlacement> placements =
         common::SearchReachablePlacements(node.board, pieceToPlace, spawn->rotation, spawn->position);
@@ -45,10 +45,10 @@ void ExpandOption(const BeamNode& node, const core::Mino& pieceToPlace, bool use
         child.nextPieceIndex = newNextPieceIndex;
 
         if (!node.rootPlan.empty()) {
-            // 既にこの系統の起点の操作列は決定済み。そのまま引き継ぐ。
+            // 操作列は既に決まっている
             child.rootPlan = node.rootPlan;
         } else {
-            // この系統の起点の操作列を今ここで決定する。
+            // 操作列を決める
             if (usedHold) child.rootPlan.push_back(PlayerMove::Hold);
             std::vector<PlayerMove> plan = common::ToExecutablePlan(placement.path);
             child.rootPlan.insert(child.rootPlan.end(), plan.begin(), plan.end());
@@ -58,13 +58,12 @@ void ExpandOption(const BeamNode& node, const core::Mino& pieceToPlace, bool use
     }
 }
 
-// nodeの次のラウンドの候補を、candidatesの末尾に追加する。
 void ExpandNode(const BeamNode& node, const std::vector<const core::Mino*>& sequence, const Weights& weights,
                 std::vector<BeamNode>& candidates) {
     const int sequenceSize = static_cast<int>(sequence.size());
 
     if (node.nextPieceIndex >= sequenceSize) {
-        candidates.push_back(node);  // sequenceを読み切っている枝は、そのまま持ち越す。
+        candidates.push_back(node);
         return;
     }
 
@@ -90,7 +89,7 @@ struct CandidateRef {
     int index = 0;  // candidates内の位置(同点のときは小さい方を優先する)
 };
 
-// sequence = [現在のピース, 次のsearchDepth個](Next表示の範囲内、合計searchDepth+1個)。
+// 落ちてくるブロックの順番を取得
 std::vector<const core::Mino*> BuildSequence(const core::Game& game, int searchDepth) {
     std::vector<const core::Mino*> sequence;
     sequence.push_back(game.GetActivePiece().MinoPtr());
@@ -111,7 +110,6 @@ std::vector<BeamNode> SelectNextBeam(std::vector<BeamNode>& candidates, int beam
         refs.push_back(CandidateRef{candidates[static_cast<std::size_t>(i)].score, i});
     }
 
-    // 上位beam-width件だけ分かればいいので、全件ソートせずpartial_sortで済ませる。
     std::size_t keep = std::min(refs.size(), static_cast<std::size_t>(beamWidth));
     std::partial_sort(refs.begin(), refs.begin() + static_cast<std::ptrdiff_t>(keep), refs.end(),
                       [](const CandidateRef& a, const CandidateRef& b) {
@@ -156,11 +154,6 @@ std::vector<PlayerMove> BeamSearchPlayer::Plan(const core::Game& game) {
     std::vector<BeamNode> beam;
     beam.push_back(std::move(root));
 
-    // sequenceを全ノードが読み切る(nextPieceIndexがsequenceSize以上になる)まで繰り返す。
-    // 最初のホールドは1手でsequenceを2個進めるため、ノードごとにnextPieceIndexが異なりうる
-    // (=ステップ数が固定にならない)。
-    // ラウンドをまたいで使い回す。候補は数千個になり、vectorの拡張(再割り当て)が遅さの原因になるため、
-    // 1ノードあたりの候補数の目安(置き場所 x Holdの3通り)で先に確保しておく。足りなければ自動で拡張される。
     constexpr std::size_t kExpectedCandidatesPerNode = 128;
     std::vector<BeamNode> candidates;
     candidates.reserve(static_cast<std::size_t>(beamWidth_) * kExpectedCandidatesPerNode);
@@ -176,7 +169,7 @@ std::vector<PlayerMove> BeamSearchPlayer::Plan(const core::Game& game) {
         }
 
         std::vector<BeamNode> nextBeam = SelectNextBeam(candidates, beamWidth_);
-        if (nextBeam.empty()) break;  // どの候補からも置けなくなった(それ以上先は読めない)
+        if (nextBeam.empty()) break; // どの候補からも置けなくなった(それ以上先は読めない)
         beam = std::move(nextBeam);
     }
 
