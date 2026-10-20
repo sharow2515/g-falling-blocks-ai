@@ -6,7 +6,6 @@ add_library(ai STATIC
     common/move_execution.cpp
     common/executable_plan.cpp
     common/spawn_state.cpp
-    common/rotation_cache.cpp
     simple/placement.cpp
     simple/evaluator.cpp
     simple/simple_player.cpp

@@ -7,7 +7,6 @@
 #include "ai/common/executable_plan.hpp"
 #include "ai/common/occupancy_grid.hpp"
 #include "ai/common/reachable_search.hpp"
-#include "ai/common/rotation_cache.hpp"
 #include "ai/common/spawn_state.hpp"
 
 namespace fb::ai::beam {
@@ -59,47 +58,36 @@ void ExpandOption(const BeamNode& node, const core::Mino& pieceToPlace, bool use
     }
 }
 
-// 1ラウンド分の展開作業の単位(ノード×パターン)。並列化の粒度として使う。
-struct ExpandTask {
-    const BeamNode* node = nullptr;
-    bool isCarryOver = false;  // true: 展開せずnodeをそのまま持ち越すだけ
-    const core::Mino* pieceToPlace = nullptr;
-    bool usedHold = false;
-    const core::Mino* newHoldMino = nullptr;
-    int newNextPieceIndex = 0;
-};
+// nodeの次のラウンドの候補を、candidatesの末尾に追加する。
+void ExpandNode(const BeamNode& node, const std::vector<const core::Mino*>& sequence, const Weights& weights,
+                std::vector<BeamNode>& candidates) {
+    const int sequenceSize = static_cast<int>(sequence.size());
 
-std::vector<ExpandTask> BuildExpandTasks(const std::vector<BeamNode>& beam,
-                                          const std::vector<const core::Mino*>& sequence, int sequenceSize) {
-    std::vector<ExpandTask> tasks;
-    for (const BeamNode& node : beam) {
-        if (node.nextPieceIndex >= sequenceSize) {
-            tasks.push_back(ExpandTask{&node, /*isCarryOver=*/true});
-            continue;
-        }
-
-        // Hold しないとき
-        tasks.push_back(ExpandTask{&node, false, sequence[node.nextPieceIndex], false, node.holdMino, node.nextPieceIndex + 1});
-
-        // Hold するとき(初回以外)
-        if (node.holdMino != nullptr) {
-            tasks.push_back(
-                ExpandTask{&node, false, node.holdMino, true, sequence[node.nextPieceIndex], node.nextPieceIndex + 1});
-        }
-
-        // Hold するとき(初回)
-        if (node.holdMino == nullptr && node.nextPieceIndex + 1 < sequenceSize) {
-            tasks.push_back(ExpandTask{&node, false, sequence[node.nextPieceIndex + 1], true, sequence[node.nextPieceIndex],
-                                        node.nextPieceIndex + 2});
-        }
+    if (node.nextPieceIndex >= sequenceSize) {
+        candidates.push_back(node);  // sequenceを読み切っている枝は、そのまま持ち越す。
+        return;
     }
-    return tasks;
+
+    // Hold しないとき
+    ExpandOption(node, *sequence[node.nextPieceIndex], false, node.holdMino, node.nextPieceIndex + 1, weights,
+                 candidates);
+
+    // Hold するとき(初回以外)
+    if (node.holdMino != nullptr) {
+        ExpandOption(node, *node.holdMino, true, sequence[node.nextPieceIndex], node.nextPieceIndex + 1, weights,
+                     candidates);
+    }
+
+    // Hold するとき(初回)
+    if (node.holdMino == nullptr && node.nextPieceIndex + 1 < sequenceSize) {
+        ExpandOption(node, *sequence[node.nextPieceIndex + 1], true, sequence[node.nextPieceIndex],
+                     node.nextPieceIndex + 2, weights, candidates);
+    }
 }
 
 struct CandidateRef {
     double score = 0.0;
-    int taskIdx = 0;
-    int resultIdx = 0;
+    int index = 0;  // candidates内の位置(同点のときは小さい方を優先する)
 };
 
 // sequence = [現在のピース, 次のsearchDepth個](Next表示の範囲内、合計searchDepth+1個)。
@@ -112,36 +100,29 @@ std::vector<const core::Mino*> BuildSequence(const core::Game& game, int searchD
     return sequence;
 }
 
-// perTaskResultsの全候補から、スコア上位beamWidth件を選んで次のビームにする(候補は移動される)。
+// candidatesから、スコア上位beamWidth件を選んで次のビームにする(候補は移動される)。
 // 候補が1つもなければ空のビームを返す。
-std::vector<BeamNode> SelectNextBeam(std::vector<std::vector<BeamNode>>& perTaskResults, int beamWidth) {
+std::vector<BeamNode> SelectNextBeam(std::vector<BeamNode>& candidates, int beamWidth) {
+    if (candidates.empty()) return {};
+
     std::vector<CandidateRef> refs;
-    std::size_t totalCandidates = 0;
-    for (const auto& result : perTaskResults) totalCandidates += result.size();
-    refs.reserve(totalCandidates);
-    for (int i = 0; i < static_cast<int>(perTaskResults.size()); ++i) {
-        const auto& result = perTaskResults[static_cast<std::size_t>(i)];
-        for (int j = 0; j < static_cast<int>(result.size()); ++j) {
-            refs.push_back(CandidateRef{result[static_cast<std::size_t>(j)].score, i, j});
-        }
+    refs.reserve(candidates.size());
+    for (int i = 0; i < static_cast<int>(candidates.size()); ++i) {
+        refs.push_back(CandidateRef{candidates[static_cast<std::size_t>(i)].score, i});
     }
-    if (refs.empty()) return {};
 
     // 上位beam-width件だけ分かればいいので、全件ソートせずpartial_sortで済ませる。
     std::size_t keep = std::min(refs.size(), static_cast<std::size_t>(beamWidth));
     std::partial_sort(refs.begin(), refs.begin() + static_cast<std::ptrdiff_t>(keep), refs.end(),
                       [](const CandidateRef& a, const CandidateRef& b) {
                           if (a.score != b.score) return a.score > b.score;
-                          if (a.taskIdx != b.taskIdx) return a.taskIdx < b.taskIdx;
-                          return a.resultIdx < b.resultIdx;
+                          return a.index < b.index;
                       });
 
     std::vector<BeamNode> nextBeam;
     nextBeam.reserve(keep);
     for (std::size_t k = 0; k < keep; ++k) {
-        const CandidateRef& ref = refs[k];
-        nextBeam.push_back(std::move(perTaskResults[static_cast<std::size_t>(ref.taskIdx)]
-                                                    [static_cast<std::size_t>(ref.resultIdx)]));
+        nextBeam.push_back(std::move(candidates[static_cast<std::size_t>(refs[k].index)]));
     }
     return nextBeam;
 }
@@ -172,67 +153,31 @@ std::vector<PlayerMove> BeamSearchPlayer::Plan(const core::Game& game) {
     root.holdMino = game.GetHoldMino();
     root.nextPieceIndex = 0;
 
-    std::vector<const core::Mino*> minosToWarm = sequence;
-    if (root.holdMino != nullptr) minosToWarm.push_back(root.holdMino);
-    common::WarmUpRotationCaches(std::move(minosToWarm));
-
     std::vector<BeamNode> beam;
     beam.push_back(std::move(root));
 
     // sequenceを全ノードが読み切る(nextPieceIndexがsequenceSize以上になる)まで繰り返す。
     // 最初のホールドは1手でsequenceを2個進めるため、ノードごとにnextPieceIndexが異なりうる
     // (=ステップ数が固定にならない)。
-    //
-    // #pragma omp parallelでスレッドチームをループ全体で1回だけ作り、ラウンドごとの
-    // チーム編成・解体のオーバーヘッドをなくす。逐次部分はsingleで1スレッドだけ実行し、
-    // (暗黙のバリアにより)全スレッドがbeam/tasks/perTaskResultsなどを同じタイミングで
-    // 同じ内容として見られるようにしている。これらの変数はparallelの外側(ここ)で
-    // 宣言しているのでスレッド間で共有される。
-    bool anyPending = false;
-    bool hasCandidates = false;
-    std::vector<ExpandTask> tasks;
-    std::vector<std::vector<BeamNode>> perTaskResults;
+    // ラウンドをまたいで使い回す。候補は数千個になり、vectorの拡張(再割り当て)が遅さの原因になるため、
+    // 1ノードあたりの候補数の目安(置き場所 x Holdの3通り)で先に確保しておく。足りなければ自動で拡張される。
+    constexpr std::size_t kExpectedCandidatesPerNode = 128;
+    std::vector<BeamNode> candidates;
+    candidates.reserve(static_cast<std::size_t>(beamWidth_) * kExpectedCandidatesPerNode);
+    while (true) {
+        const bool anyPending = std::any_of(beam.begin(), beam.end(), [sequenceSize](const BeamNode& node) {
+            return node.nextPieceIndex < sequenceSize;
+        });
+        if (!anyPending) break;
 
-#pragma omp parallel default(shared)
-    {
-        while (true) {
-#pragma omp single
-            {
-                anyPending = false;
-                for (const auto& node : beam) {
-                    if (node.nextPieceIndex < sequenceSize) {
-                        anyPending = true;
-                        break;
-                    }
-                }
-                if (anyPending) {
-                    tasks = BuildExpandTasks(beam, sequence, sequenceSize);
-                    perTaskResults.assign(tasks.size(), {});
-                }
-            }  // 全スレッドがここでanyPending/tasks/perTaskResultsを同じ値で見る
-
-            if (!anyPending) break;
-
-#pragma omp for schedule(dynamic)
-            for (int i = 0; i < static_cast<int>(tasks.size()); ++i) {
-                const ExpandTask& task = tasks[i];
-                if (task.isCarryOver) {
-                    perTaskResults[static_cast<std::size_t>(i)].push_back(*task.node);  // そのまま持ち越す。
-                    continue;
-                }
-                ExpandOption(*task.node, *task.pieceToPlace, task.usedHold, task.newHoldMino, task.newNextPieceIndex,
-                             weights_, perTaskResults[static_cast<std::size_t>(i)]);
-            }  // 全スレッドのExpandOptionが完了してから先に進む
-
-#pragma omp single
-            {
-                std::vector<BeamNode> nextBeam = SelectNextBeam(perTaskResults, beamWidth_);
-                hasCandidates = !nextBeam.empty();
-                if (hasCandidates) beam = std::move(nextBeam);
-            }
-
-            if (!hasCandidates) break;  // どの候補からも置けなくなった(それ以上先は読めない)
+        candidates.clear();
+        for (const BeamNode& node : beam) {
+            ExpandNode(node, sequence, weights_, candidates);
         }
+
+        std::vector<BeamNode> nextBeam = SelectNextBeam(candidates, beamWidth_);
+        if (nextBeam.empty()) break;  // どの候補からも置けなくなった(それ以上先は読めない)
+        beam = std::move(nextBeam);
     }
 
     if (beam.empty()) return {};
