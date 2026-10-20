@@ -11,7 +11,6 @@ namespace fb::ai::beam_tuned {
 
 namespace {
 
-// カンマで区切る。空の要素(",,"や末尾の",")も1つの要素として残す。
 std::vector<std::string> SplitByComma(const std::string& text) {
     std::vector<std::string> tokens;
     std::size_t start = 0;
@@ -26,7 +25,6 @@ std::vector<std::string> SplitByComma(const std::string& text) {
     }
 }
 
-// 文字列全体を有限の数値として読む。読めなければstd::invalid_argumentを投げる。
 double ParseDouble(const std::string& token) {
     std::size_t pos = 0;
     try {
@@ -82,7 +80,6 @@ Features ComputeFeaturesFromClearedBoard(const common::OccupancyGrid& clearedBoa
     f.landingHeight = common::ComputeLandingHeight(cells);
     f.erodedPieceCells = common::ComputeErodedPieceCells(cells, clearedRows);
 
-    // clearedBoardは既にOccupancyGridなので、ここで作り直す必要はない。
     f.holes = common::CountHoles(clearedBoard);
     f.rowTransitions = common::CountRowTransitions(clearedBoard);
     f.columnTransitions = common::CountColumnTransitions(clearedBoard);
